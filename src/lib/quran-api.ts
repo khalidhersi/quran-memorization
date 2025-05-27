@@ -18,3 +18,10 @@ export async function getAyah(surahNumber : any, ayahNumber: any) {
     const data = await res.json();
     return data.data;
   }
+  export async function getReciter(surahNumber: any, ayahNumber: any, reciterId: any) {
+    const res = await fetch(`https://api.alquran.cloud/v1/ayah/${surahNumber}:${ayahNumber}/${reciterId}`);
+    const data = await res.json();
+    return data.data;
+  }
+  
+

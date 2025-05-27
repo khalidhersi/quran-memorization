@@ -13,6 +13,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 import { getAyah } from '../../lib/quran-api';
 import ayahCounts from '../../../ayah_counts.json';
+import { getReciter } from "../../lib/quran-api";
 
 
 // Sample data - in a real app, this would come from an API or database
@@ -53,6 +54,8 @@ export default function MemorizePage() {
 const [surahNumber, setSurahNumber] = useState(2);
 const [ayahNumber, setAyahNumber] = useState(255);
 const [ayahData, setAyahData] = useState<any>(null);
+const [audioUrl, setAudioUrl] = useState('');
+
 
 useEffect(() => {
   async function fetchAyah() {
@@ -65,9 +68,18 @@ useEffect(() => {
       audioUrl: data.audio,
     });
   }
-
   fetchAyah();
 }, [surahNumber, ayahNumber]);
+
+useEffect(() => {
+  async function fetchReciterAudio() {
+    const data = await getReciter(surahNumber, ayahNumber, "ar.alafasy");
+    console.log(data.audio);  // Assuming the API returns an `audio` property with the URL
+    setAudioUrl(data.audio);  // Assuming the API returns an `audio` property with the URL
+  }
+  fetchReciterAudio();
+}, [surahNumber, ayahNumber, selectedReciter, audioUrl]);
+
   // Handle play/pause
   const togglePlayPause = () => {
     if (audioRef.current) {
@@ -298,7 +310,7 @@ useEffect(() => {
               )}
             >
               {/* needs to be dynaimic  */}
-              {ayahData.translation || "Loading..."}
+              {ayahData?.translation || "Loading..."}
             </div>
           </CardContent>
         </Card>
@@ -306,7 +318,11 @@ useEffect(() => {
         {/* Audio Player */}
         <Card className="mb-4 lg:mb-6">
           <CardContent className="p-4 lg:p-6">
-            <audio ref={audioRef} src={ayahData?.audioUrl || "Loading..."} loop={isLooping} muted={isMuted} />
+          {audioUrl ? (
+           <audio ref={audioRef} src={audioUrl} controls loop />
+          ) : (
+          <p>Loading audio...</p>
+        )}
 
             {/* Progress Bar */}
             <div className="mb-2">
