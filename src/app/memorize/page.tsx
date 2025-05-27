@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Play, Pause, Rewind, Repeat, Check, ChevronRight, Volume2, VolumeX } from "lucide-react"
+import { Play, Pause, Rewind, Repeat, Check, ChevronRight, Volume2, VolumeX, Minus, ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -21,17 +21,20 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { TimerReset } from "lucide-react";
+import { doc, setDoc, getDoc, deleteDoc, getDocs, collection, Timestamp  } from "firebase/firestore";
+import { db } from "@/firebase"; // Adjust path if different
+import { getAuth } from "firebase/auth"; // Optional if user context is elsewhere
 
+type MemorizePage = {
+  surahNumber: number;
+  ayahNumber: number;
+};
 
-// Sample data - in a real app, this would come from an API or database
-const sampleAyah = {
-  surah: "Al-Baqarah",
-  number: 255,
-  arabic:
-    "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ",
-  translation:
-    "Allah - there is no deity except Him, the Ever-Living, the Sustainer of [all] existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth. Who is it that can intercede with Him except by His permission? He knows what is [presently] before them and what will be after them, and they encompass not a thing of His knowledge except for what He wills. His Kursi extends over the heavens and the earth, and their preservation tires Him not. And He is the Most High, the Most Great.",
-  audioUrl: "/ayatul-kursi.mp3", // This would be a real URL in a production app
+interface UserMemorizedAyah {
+  userId: string;
+  surah: number;
+  ayah: number;
+  memorizedAt: Timestamp;
 }
 
 const reciters = [
@@ -44,7 +47,6 @@ const reciters = [
 
 
 export default function MemorizePage() {
-  const [isMemorized, setIsMemorized] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLooping, setIsLooping] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
@@ -53,31 +55,84 @@ export default function MemorizePage() {
   const [duration, setDuration] = useState(0)
   const [selectedReciter, setSelectedReciter] = useState(reciters[0].id)
   const [showTranslation, setShowTranslation] = useState(false)
-
   const audioRef = useRef<HTMLAudioElement>(null)
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const userId = "user_123";
+  const [surahNumber, setSurahNumber] = useState(1);
+  const [ayahNumber, setAyahNumber] = useState(1);
+  const [ayahData, setAyahData] = useState<any>(null);
+  const [audioUrl, setAudioUrl] = useState('');
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [isMemorized, setIsMemorized] = useState(false);
+
+  useEffect(() => {
+    const loadLastMemorized = async () => {
+      const last = await getLastMemorizedAyah();
+      if (last) {
+        setSurahNumber(last.surah);
+        setAyahNumber(last.ayah);
+      }
+    };
+    loadLastMemorized();
+  }, []);
+  
+
+  const getLastMemorizedAyah = async () => {
+    // const user = getAuth().currentUser;
+    if (!userId) return null;
+  
+    const snapshot = await getDocs(collection(db, "user_memorized_ayahs"));
+    const userDocs = snapshot.docs
+      .filter(doc => doc.id.startsWith(userId))
+      .map(doc => {
+        const data = doc.data() as UserMemorizedAyah;
+        return {
+          id: doc.id,
+          ...data
+        };
+      })
+      .sort((a, b) => b.memorizedAt.seconds - a.memorizedAt.seconds); // Newest first
+  
+    return userDocs.length > 0
+      ? {
+          surah: userDocs[0].surah,
+          ayah: userDocs[0].ayah,
+        }
+      : null;
+  };
 
   
-const [surahNumber, setSurahNumber] = useState(2);
-const [ayahNumber, setAyahNumber] = useState(255);
-const [ayahData, setAyahData] = useState<any>(null);
-const [audioUrl, setAudioUrl] = useState('');
-const [playbackRate, setPlaybackRate] = useState(1);
+  // 1️⃣ Fetch Ayah Data
+  useEffect(() => {
+    async function fetchAyah() {
+      const data = await getAyah(surahNumber, ayahNumber);
+      setAyahData({
+        surah: data.surah.englishName,
+        number: data.numberInSurah,
+        arabic: data.text,
+        translation: data?.edition?.englishName || "",
+        audioUrl: data.audio,
+      });
+    }
+    fetchAyah();
+  }, [surahNumber, ayahNumber]);
 
+  // 2️⃣ Check Memorized Status
+  useEffect(() => {
+    const checkMemorizedStatus = async () => {
+      // const user = getAuth().currentUser;
+      if (!userId) return;
 
-useEffect(() => {
-  async function fetchAyah() {
-    const data = await getAyah(surahNumber, ayahNumber);
-    setAyahData({
-      surah: data.surah.englishName,
-      number: data.numberInSurah,
-      arabic: data.text,
-      translation: data?.edition?.englishName || "",
-      audioUrl: data.audio,
-    });
-  }
-  fetchAyah();
-}, [surahNumber, ayahNumber]);
+      const docRef = doc(db, "user_memorized_ayahs", `${userId}_${surahNumber}_${ayahNumber}`);
+      // const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
+      const docSnap = await getDoc(docRef);
+
+      setIsMemorized(docSnap.exists());
+    };
+
+    checkMemorizedStatus();
+  }, [surahNumber, ayahNumber]);
+
 
 useEffect(() => {
   async function fetchReciterAudio() {
@@ -198,22 +253,38 @@ useEffect(() => {
   }
 
   // Mark ayah as memorized
-  const markAsMemorized = () => {
-    setIsMemorized(true)
-  }
+  const markAsMemorized = async () => {
+    try {
+      // const user = getAuth().currentUser;
+      if (!userId) {
+        alert("Please log in to track memorization.");
+        return;
+      }
+  
+      const docRef = doc(db, "user_memorized_ayahs", `${userId}_${surahNumber}_${ayahNumber}`);
+      // const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
+      await setDoc(docRef, {
+        // userId: user.uid,
+        userId: 123,
+        surah: surahNumber,
+        ayah: ayahNumber,
+        memorizedAt: new Date(),
+      });
+  
+      setIsMemorized(true);
+    } catch (err) {
+      console.error("Failed to mark as memorized:", err);
+    }
+  };
 
-  // Go to next ayah
-  // const goToNextAyah = () => {
-  //   // In a real app, this would load the next ayah
-  //   // For this demo, we'll just reset the current state
-  //   setIsMemorized(false)
-  //   setIsPlaying(false)
-  //   setCurrentTime(0)
-  //   if (audioRef.current) {
-  //     audioRef.current.currentTime = 0
-  //     audioRef.current.pause()
-  //   }
-  // }
+  const unmarkAsMemorized = async () => {
+    // const user = getAuth().currentUser;
+    if (!userId) return;
+  
+    const docRef = doc(db, "user_memorized_ayahs", `${userId}_${surahNumber}_${ayahNumber}`);
+    await deleteDoc(docRef);
+    setIsMemorized(false);
+  };
 
   const goToNextAyah = () => {
     setIsMemorized(false);
@@ -268,6 +339,35 @@ useEffect(() => {
   }
 }, []);
 
+useEffect(() => {
+  const loadLastMemorizedAyah = async () => {
+    const user = getAuth().currentUser;
+    if (!user) return;
+
+    const userPrefix = `${user.uid}_`;
+    const snapshot = await getDocs(collection(db, "user_memorized_ayahs"));
+    const userDocs = snapshot.docs.filter(doc => doc.id.startsWith(userPrefix));
+
+    if (userDocs.length === 0) return;
+
+    // Sort by timestamp (latest memorized)
+    userDocs.sort((a, b) => {
+      const aDate = a.data().memorizedAt?.toDate?.() || new Date(0);
+      const bDate = b.data().memorizedAt?.toDate?.() || new Date(0);
+      return bDate - aDate;
+    });
+
+    const lastDoc = userDocs[0];
+    const { surah, ayah } = lastDoc.data();
+
+    setSurahNumber(surah);
+    setAyahNumber(ayah);
+  };
+
+  loadLastMemorizedAyah();
+}, []);
+
+
 // Sync audio element when playbackRate changes
 useEffect(() => {
   if (audioRef.current) {
@@ -312,7 +412,11 @@ useEffect(() => {
         <Card className="mb-4 lg:mb-6">
           <CardContent className="p-4 lg:p-6">
             {/* Arabic Text */}
-            <div dir="rtl" lang="ar" className="mb-4 text-center text-2xl leading-loose lg:text-3xl">
+            <div
+              className=" leading-snug text-[clamp(2rem,3vw,2rem)] p-3 text-center"
+              dir="rtl"
+              lang="ar"
+            >
               {ayahData?.arabic || "Loading..."}
             </div>
 
@@ -451,13 +555,6 @@ useEffect(() => {
                 />
               </div>
             </div>
-
-            {/* <div className="mt-3 flex items-center gap-2 lg:mt-4">
-              <Label htmlFor="auto-play-next" className="text-sm">
-                Auto-play next ayah
-              </Label>
-              <Switch id="auto-play-next" />
-            </div> */}
           </CardContent>
         </Card>
 
@@ -476,22 +573,35 @@ useEffect(() => {
           </Button>
 
           <Button
+            onClick={unmarkAsMemorized}
+            disabled={!isMemorized}
+            className={cn(
+              "flex h-12 items-center justify-center gap-2",
+              isMemorized ? "bg-red-600 hover:bg-red-600/80 text-white-100" : "",
+            )}
+          >
+            <Minus className="h-4 w-4" />
+            {isMemorized ? "Marked as Memorized" : "Mark as Memorized"}
+          </Button>
+
+          <Button
+            onClick={goToPreviousAyah}
+            disabled={!isMemorized}
+            className="flex h-12 items-center justify-center gap-2"
+          >
+          <ChevronLeft className="h-4 w-4" />
+            Previous Ayah
+          </Button>
+
+          <Button
             onClick={goToNextAyah}
             disabled={!isMemorized}
             className="flex h-12 items-center justify-center gap-2"
           >
             Next Ayah
             <ChevronRight className="h-4 w-4" />
-
           </Button>
-          <Button
-            onClick={goToPreviousAyah}
-            disabled={!isMemorized}
-            className="flex h-12 items-center justify-center gap-2"
-          >
-            Previous Ayah
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+         
         </div>
       </div>
     </div>
