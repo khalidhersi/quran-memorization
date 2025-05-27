@@ -29,7 +29,6 @@ export default function ProgressDemoPage() {
 
   const syncToFirebase = async (memorized: Record<number, number[]>) => {
     try {
-      console.log("Syncing to Firebase:", memorized); // ✅ Debug log
       await setDoc(doc(db, "users", userId), { memorized }, { merge: true });
     } catch (err) {
       console.error("Error writing to Firebase:", err);
@@ -59,6 +58,10 @@ export default function ProgressDemoPage() {
           const data = docSnap.data();
           if (data.memorized) {
             setMemorized(data.memorized);
+  
+            const { lastSurah, lastAyah } = getLastMemorizedPosition(data.memorized);
+            setSurahNumber(lastSurah);
+            setAyahNumber(lastAyah);
           }
         }
       } catch (err) {
@@ -68,6 +71,7 @@ export default function ProgressDemoPage() {
   
     loadMemorizedFromFirebase();
   }, []);
+  
   
   
   useEffect(() => {
@@ -126,6 +130,24 @@ export default function ProgressDemoPage() {
       setAyahNumber(nextAyah);
     }
   };
+
+  const getLastMemorizedPosition = (memorized: MemorizedMap) => {
+    let lastSurah = 1;
+    let lastAyah = 1;
+  
+    for (const [surah, ayahs] of Object.entries(memorized)) {
+      const surahNum = parseInt(surah);
+      if (ayahs.length > 0) {
+        if (surahNum > lastSurah || (surahNum === lastSurah && Math.max(...ayahs) > lastAyah)) {
+          lastSurah = surahNum;
+          lastAyah = Math.max(...ayahs);
+        }
+      }
+    }
+  
+    return { lastSurah, lastAyah };
+  };
+  
 
   return (
     <div className="bg-background">
