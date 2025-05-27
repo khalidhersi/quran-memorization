@@ -101,6 +101,10 @@ export default function MemorizePage() {
       : null;
   };
 
+  useEffect(() => {
+    setSelectedSurah(surahNumber);
+    setSelectedAyah(ayahNumber);
+  }, [surahNumber, ayahNumber]);
   
   // 1️⃣ Fetch Ayah Data
   useEffect(() => {
@@ -376,6 +380,17 @@ useEffect(() => {
   localStorage.setItem("playbackRate", playbackRate.toString());
 }, [playbackRate]);
 
+// Assuming surah count is 114 and ayah count comes from some config or static mapping
+const [selectedSurah, setSelectedSurah] = useState(surahNumber);
+const [selectedAyah, setSelectedAyah] = useState(ayahNumber);
+
+// Call this when user clicks "Continue"
+const handleContinueFromSelection = () => {
+  setSurahNumber(selectedSurah);
+  setAyahNumber(selectedAyah);
+};
+
+
   return (
     <div className="bg-background">
       <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
@@ -385,11 +400,53 @@ useEffect(() => {
 
       <div className="mx-auto max-w-4xl p-4 lg:p-6">
         {/* Reciter Selection */}
-        <div className="mb-4 lg:mb-6">
+        <div className="mb-4 lg:mb-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold lg:text-xl">
             {ayahData ? `${ayahData.surah} (${ayahData.number})` : "Loading..."}
             </h2>
+            
+              <label className="flex items-center gap-2">
+                <span>Surah:</span>
+                <select
+                  value={selectedSurah}
+                  onChange={(e) => {
+                    const surah = parseInt(e.target.value);
+                    setSelectedSurah(surah);
+                    setSelectedAyah(1);
+                  }}
+                  className="border rounded px-1 py-0.5 text-xs"
+                >
+                  {[...Array(114)].map((_, i) => (
+                    <option defaultValue={ayahNumber} key={i + 1} value={i + 1} >
+                      {i + 1}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex items-center gap-2">
+                <span>Ayah:</span>
+                <select
+                  value={selectedAyah}
+                  onChange={(e) => setSelectedAyah(parseInt(e.target.value))}
+                  className="border rounded px-1 py-0.5 text-xs"
+                >
+                  {[...Array(ayahCounts.ayah_counts[selectedSurah - 1])].map((_, i) => (
+                    <option key={i + 1} value={i + 1}>
+                      {i + 1}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <button
+                onClick={handleContinueFromSelection}
+                className="bg-green-600 text-white px-2 py-0.5 m- rounded hover:bg-green-700 text-xs"
+              >
+                Continue
+              </button>
+
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Reciter:</span>
               <Select value={selectedReciter} onValueChange={setSelectedReciter}>
