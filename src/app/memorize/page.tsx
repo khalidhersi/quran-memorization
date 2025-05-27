@@ -312,7 +312,7 @@ useEffect(() => {
         <Card className="mb-4 lg:mb-6">
           <CardContent className="p-4 lg:p-6">
             {/* Arabic Text */}
-            <div dir="rtl" lang="ar" className="mb-4 text-center text-2xl leading-loose font-arabic lg:text-3xl">
+            <div dir="rtl" lang="ar" className="mb-4 text-center text-2xl leading-loose lg:text-3xl">
               {ayahData?.arabic || "Loading..."}
             </div>
 
@@ -452,12 +452,12 @@ useEffect(() => {
               </div>
             </div>
 
-            <div className="mt-3 flex items-center gap-2 lg:mt-4">
+            {/* <div className="mt-3 flex items-center gap-2 lg:mt-4">
               <Label htmlFor="auto-play-next" className="text-sm">
                 Auto-play next ayah
               </Label>
               <Switch id="auto-play-next" />
-            </div>
+            </div> */}
           </CardContent>
         </Card>
 

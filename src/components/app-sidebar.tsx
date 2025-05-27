@@ -31,7 +31,7 @@ export function AppSidebar() {
       href: "/memorize",
     },
     {
-      title: "Progress",
+      title: "Test the Hafidh",
       icon: Calendar,
       href: "/progress-demo",
     },

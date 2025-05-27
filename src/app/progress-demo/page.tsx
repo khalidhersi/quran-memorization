@@ -1,54 +1,103 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { LockedProgressCard } from "@/components/locked-progress-card"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { getAyah } from "@/lib/quran-api"
+import ayahCounts from '../../../ayah_counts.json';
+
 
 export default function ProgressDemoPage() {
-  const [currentAyah, setCurrentAyah] = useState(1)
   const [isMemorized, setIsMemorized] = useState(false)
+  const [surahNumber, setSurahNumber] = useState(1);
+  const [ayahNumber, setAyahNumber] = useState(1);
+  const [ayahData, setAyahData] = useState<any>(null);
+  const [showCongrats, setShowCongrats] = useState(false);
 
   const handleMarkAsMemorized = () => {
     setIsMemorized(true)
   }
 
-  const handleNextAyah = () => {
-    setCurrentAyah(currentAyah + 1)
-    setIsMemorized(false)
-  }
+  useEffect(() => {
+    async function fetchAyah() {
+      const data = await getAyah(surahNumber, ayahNumber);
+      setAyahData({
+        surah: data.surah.englishName,
+        number: data.numberInSurah,
+        arabic: data.text,
+        translation: data?.edition?.englishName || "",
+        audioUrl: data.audio,
+      });
+    }
+    fetchAyah();
+  }, [surahNumber, ayahNumber]);
+
+  const goToNextAyah = () => {
+    setIsMemorized(false);
+    
+    const lastAyahInSurah = ayahCounts.ayah_counts[surahNumber - 1]; // Index is 0-based
+    const nextAyah = ayahNumber + 1;
+
+    if (ayahNumber === lastAyahInSurah) {
+      // Surah completed
+      setShowCongrats(true);
+      return;
+    }
+  
+    if (nextAyah > lastAyahInSurah) {
+      const nextSurah = surahNumber === 114 ? 1 : surahNumber + 1;
+      setSurahNumber(nextSurah);
+      setAyahNumber(1);
+    } else {
+      setAyahNumber(nextAyah);
+    }
+  };
 
   return (
     <div className="bg-background">
       <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
         <SidebarTrigger className="lg:hidden" />
-        <h1 className="text-xl font-semibold">Progress</h1>
+        <h1 className="text-xl font-semibold">Test the Hafidh</h1>
       </header>
+
+      {showCongrats && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
+        <div className="text-center p-8 bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-md mx-auto">
+          <h1 className="text-3xl font-bold text-emerald-600 mb-4">🎉 Congratulations!</h1>
+          <p className="text-lg text-gray-700 dark:text-gray-300 mb-6">
+            You’ve completed Surah {ayahData?.surah}!
+          </p>
+          <Button
+            onClick={() => {
+              setShowCongrats(false);
+              const nextSurah = surahNumber === 114 ? 1 : surahNumber + 1;
+              setSurahNumber(nextSurah);
+              setAyahNumber(1);
+            }}
+          >
+            Continue to next Surah
+          </Button>
+        </div>
+      </div>
+    )}
 
       <div className="container mx-auto max-w-2xl py-8">
         {/* Current Ayah Card */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <h2 className="mb-2 text-xl font-semibold">Ayah {currentAyah}</h2>
-            <p className="mb-4 text-lg font-arabic" dir="rtl" lang="ar">
-              {currentAyah === 1
-                ? "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
-                : currentAyah === 2
-                  ? "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ"
-                  : currentAyah === 3
-                    ? "الرَّحْمَٰنِ الرَّحِيمِ"
-                    : "مَالِكِ يَوْمِ الدِّينِ"}
+            <h2 className="mb-2 text-xl font-semibold">{ayahData ? `${ayahData.surah} ${ayahData.number}/${ayahCounts.ayah_counts[surahNumber - 1]}` : "Loading..."}</h2>
+            <p
+              className="font-arabic leading-snug text-[clamp(1rem,3vw,2rem)] p-3 text-center"
+              dir="rtl"
+              lang="ar"
+            >
+              {ayahData?.arabic || "Loading..."}
             </p>
             <p className="text-gray-600 dark:text-gray-400">
-              {currentAyah === 1
-                ? "In the name of Allah, the Entirely Merciful, the Especially Merciful"
-                : currentAyah === 2
-                  ? "All praise is due to Allah, Lord of the worlds"
-                  : currentAyah === 3
-                    ? "The Entirely Merciful, the Especially Merciful"
-                    : "Sovereign of the Day of Recompense"}
+              {ayahData?.translation || "Loading..."}
             </p>
 
             <div className="mt-6">
@@ -70,27 +119,23 @@ export default function ProgressDemoPage() {
           title="Next Ayah"
           isLocked={!isMemorized}
           tooltipMessage="Memorize this ayah to unlock the next one"
-          onUnlockedClick={handleNextAyah}
+          onUnlockedClick={goToNextAyah}
         />
 
         {/* Progress Indicator */}
         <div className="mt-8">
           <h3 className="mb-2 text-sm font-medium text-gray-500">Progress</h3>
-          <div className="flex gap-2">
-            {[1, 2, 3, 4, 5, 6, 7].map((ayahNumber) => (
-              <div
-                key={ayahNumber}
-                className={`h-2 flex-1 rounded-full ${
-                  ayahNumber < currentAyah
-                    ? "bg-emerald-500"
-                    : ayahNumber === currentAyah
-                      ? "bg-emerald-200 dark:bg-emerald-900"
-                      : "bg-gray-200 dark:bg-gray-700"
-                }`}
-              />
-            ))}
+          <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-emerald-500 transition-all duration-300"
+              style={{
+                width: `${(ayahNumber / ayahCounts.ayah_counts[surahNumber - 1]) * 100}%`,
+              }}
+            />
           </div>
-          <div className="mt-1 text-right text-xs text-gray-500">{currentAyah} of 7 ayahs</div>
+          <div className="mt-1 text-right text-xs text-gray-500">
+            {ayahNumber} of {ayahCounts.ayah_counts[surahNumber - 1]} ayahs memorized
+          </div>
         </div>
       </div>
     </div>
