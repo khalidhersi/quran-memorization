@@ -14,6 +14,13 @@ import { cn } from "@/lib/utils"
 import { getAyah } from '../../lib/quran-api';
 import ayahCounts from '../../../ayah_counts.json';
 import { getReciter } from "../../lib/quran-api";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { TimerReset } from "lucide-react";
 
 
 // Sample data - in a real app, this would come from an API or database
@@ -55,6 +62,7 @@ const [surahNumber, setSurahNumber] = useState(2);
 const [ayahNumber, setAyahNumber] = useState(255);
 const [ayahData, setAyahData] = useState<any>(null);
 const [audioUrl, setAudioUrl] = useState('');
+const [playbackRate, setPlaybackRate] = useState(1);
 
 
 useEffect(() => {
@@ -249,8 +257,24 @@ useEffect(() => {
     }
   };
   
-  
-  
+// Load default from localStorage on first render
+useEffect(() => {
+  const storedRate = localStorage.getItem("playbackRate");
+  if (storedRate) {
+    const parsedRate = parseFloat(storedRate);
+    if (!isNaN(parsedRate)) {
+      setPlaybackRate(parsedRate);
+    }
+  }
+}, []);
+
+// Sync audio element when playbackRate changes
+useEffect(() => {
+  if (audioRef.current) {
+    audioRef.current.playbackRate = playbackRate;
+  }
+  localStorage.setItem("playbackRate", playbackRate.toString());
+}, [playbackRate]);
 
   return (
     <div className="bg-background">
@@ -319,7 +343,11 @@ useEffect(() => {
         <Card className="mb-4 lg:mb-6">
           <CardContent className="p-4 lg:p-6">
           {audioUrl ? (
-           <audio ref={audioRef} src={audioUrl} controls loop />
+           <audio ref={audioRef} src={audioUrl} loop onLoadedMetadata={() => {
+            if (audioRef.current) {
+              audioRef.current.playbackRate = playbackRate;
+            }
+          }} />
           ) : (
           <p>Loading audio...</p>
         )}
@@ -372,6 +400,34 @@ useEffect(() => {
                 >
                   <Repeat className="h-4 w-4" />
                 </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-label="Playback speed"
+                      className="h-10 w-10 lg:h-9 lg:w-9"
+                    >
+                      <TimerReset className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="top">
+                    {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
+                      <DropdownMenuItem
+                        key={rate}
+                        onClick={() => setPlaybackRate(rate)}
+                        className={cn(
+                          "cursor-pointer",
+                          playbackRate === rate && "font-bold text-emerald-600"
+                        )}
+                      >
+                        {rate}x
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
               </div>
 
               <div className="flex items-center gap-2">
