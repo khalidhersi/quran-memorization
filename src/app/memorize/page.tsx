@@ -1,0 +1,427 @@
+"use client"
+
+import { useState, useRef, useEffect } from "react"
+import { Play, Pause, Rewind, Repeat, Check, ChevronRight, Volume2, VolumeX } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Slider } from "@/components/ui/slider"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { SidebarTrigger } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
+import { getAyah } from '../../lib/quran-api';
+import ayahCounts from '../../../ayah_counts.json';
+
+
+// Sample data - in a real app, this would come from an API or database
+const sampleAyah = {
+  surah: "Al-Baqarah",
+  number: 255,
+  arabic:
+    "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ",
+  translation:
+    "Allah - there is no deity except Him, the Ever-Living, the Sustainer of [all] existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth. Who is it that can intercede with Him except by His permission? He knows what is [presently] before them and what will be after them, and they encompass not a thing of His knowledge except for what He wills. His Kursi extends over the heavens and the earth, and their preservation tires Him not. And He is the Most High, the Most Great.",
+  audioUrl: "/ayatul-kursi.mp3", // This would be a real URL in a production app
+}
+
+const reciters = [
+  { id: "mishari", name: "Mishari Rashid al-Afasy" },
+  { id: "sudais", name: "Abdur-Rahman As-Sudais" },
+  { id: "minshawi", name: "Mohamed Siddiq El-Minshawi" },
+  { id: "husary", name: "Mahmoud Khalil Al-Husary" },
+  { id: "abdul_basit", name: "Abdul Basit Abdul Samad" },
+]
+
+
+export default function MemorizePage() {
+  const [isMemorized, setIsMemorized] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isLooping, setIsLooping] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
+  const [volume, setVolume] = useState(80)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [selectedReciter, setSelectedReciter] = useState(reciters[0].id)
+  const [showTranslation, setShowTranslation] = useState(false)
+
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  
+const [surahNumber, setSurahNumber] = useState(2);
+const [ayahNumber, setAyahNumber] = useState(255);
+const [ayahData, setAyahData] = useState<any>(null);
+
+useEffect(() => {
+  async function fetchAyah() {
+    const data = await getAyah(surahNumber, ayahNumber);
+    setAyahData({
+      surah: data.surah.englishName,
+      number: data.numberInSurah,
+      arabic: data.text,
+      translation: data?.edition?.englishName || "",
+      audioUrl: data.audio,
+    });
+  }
+
+  fetchAyah();
+}, [surahNumber, ayahNumber]);
+  // Handle play/pause
+  const togglePlayPause = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause()
+      } else {
+        audioRef.current.play()
+      }
+      setIsPlaying(!isPlaying)
+    }
+  }
+
+  // Handle rewind 5 seconds
+  const rewindFiveSeconds = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 5)
+      setCurrentTime(audioRef.current.currentTime)
+    }
+  }
+
+  // Handle loop toggle
+  const toggleLoop = () => {
+    if (audioRef.current) {
+      audioRef.current.loop = !isLooping
+      setIsLooping(!isLooping)
+    }
+  }
+
+  // Handle volume change
+  const handleVolumeChange = (value: number[]) => {
+    const newVolume = value[0]
+    setVolume(newVolume)
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume / 100
+    }
+  }
+
+  // Handle mute toggle
+  const toggleMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted
+      setIsMuted(!isMuted)
+    }
+  }
+
+  // Update progress bar
+  useEffect(() => {
+    if (isPlaying) {
+      progressIntervalRef.current = setInterval(() => {
+        if (audioRef.current) {
+          setCurrentTime(audioRef.current.currentTime)
+        }
+      }, 100)
+    } else if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current)
+    }
+
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current)
+      }
+    }
+  }, [isPlaying])
+
+  // Set up audio element
+  useEffect(() => {
+    const audio = audioRef.current
+
+    if (audio) {
+      // Set initial volume
+      audio.volume = volume / 100
+
+      // Event listeners
+      const handleLoadedMetadata = () => {
+        setDuration(audio.duration)
+      }
+
+      const handleEnded = () => {
+        if (!isLooping) {
+          setIsPlaying(false)
+        }
+      }
+
+      audio.addEventListener("loadedmetadata", handleLoadedMetadata)
+      audio.addEventListener("ended", handleEnded)
+
+      return () => {
+        audio.removeEventListener("loadedmetadata", handleLoadedMetadata)
+        audio.removeEventListener("ended", handleEnded)
+      }
+    }
+  }, [isLooping, volume])
+
+  // Format time (seconds) to MM:SS
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60)
+    const seconds = Math.floor(time % 60)
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`
+  }
+
+  // Handle progress bar click
+  const handleProgressChange = (value: number[]) => {
+    const newTime = value[0]
+    setCurrentTime(newTime)
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime
+    }
+  }
+
+  // Mark ayah as memorized
+  const markAsMemorized = () => {
+    setIsMemorized(true)
+  }
+
+  // Go to next ayah
+  // const goToNextAyah = () => {
+  //   // In a real app, this would load the next ayah
+  //   // For this demo, we'll just reset the current state
+  //   setIsMemorized(false)
+  //   setIsPlaying(false)
+  //   setCurrentTime(0)
+  //   if (audioRef.current) {
+  //     audioRef.current.currentTime = 0
+  //     audioRef.current.pause()
+  //   }
+  // }
+
+  const goToNextAyah = () => {
+    setIsMemorized(false);
+    setIsPlaying(false);
+    setCurrentTime(0);
+  
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  
+    const lastAyahInSurah = ayahCounts.ayah_counts[surahNumber - 1]; // Index is 0-based
+    const nextAyah = ayahNumber + 1;
+  
+    if (nextAyah > lastAyahInSurah) {
+      const nextSurah = surahNumber === 114 ? 1 : surahNumber + 1;
+      setSurahNumber(nextSurah);
+      setAyahNumber(1);
+    } else {
+      setAyahNumber(nextAyah);
+    }
+  };
+  
+  const goToPreviousAyah = () => {
+    setIsMemorized(false);
+    setIsPlaying(false);
+    setCurrentTime(0);
+  
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  
+    if (ayahNumber === 1) {
+      const prevSurah = surahNumber === 1 ? 114 : surahNumber - 1;
+      const lastAyahInPrevSurah = ayahCounts.ayah_counts[prevSurah - 1];
+      setSurahNumber(prevSurah);
+      setAyahNumber(lastAyahInPrevSurah);
+    } else {
+      setAyahNumber(ayahNumber - 1);
+    }
+  };
+  
+  
+  
+
+  return (
+    <div className="bg-background">
+      <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
+        <SidebarTrigger className="lg:hidden" />
+        <h1 className="text-xl font-semibold">Memorize Quran</h1>
+      </header>
+
+      <div className="mx-auto max-w-4xl p-4 lg:p-6">
+        {/* Reciter Selection */}
+        <div className="mb-4 lg:mb-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-lg font-semibold lg:text-xl">
+            {ayahData ? `${ayahData.surah} (${ayahData.number})` : "Loading..."}
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Reciter:</span>
+              <Select value={selectedReciter} onValueChange={setSelectedReciter}>
+                <SelectTrigger className="w-[180px] lg:w-[200px]">
+                  <SelectValue placeholder="Select reciter" />
+                </SelectTrigger>
+                <SelectContent>
+                  {reciters.map((reciter) => (
+                    <SelectItem key={reciter.id} value={reciter.id}>
+                      {reciter.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Ayah Display */}
+        <Card className="mb-4 lg:mb-6">
+          <CardContent className="p-4 lg:p-6">
+            {/* Arabic Text */}
+            <div dir="rtl" lang="ar" className="mb-4 text-center text-2xl leading-loose font-arabic lg:text-3xl">
+              {ayahData?.arabic || "Loading..."}
+            </div>
+
+            <Separator className="my-3 lg:my-4" />
+
+            {/* Translation Toggle for Mobile */}
+            <div className="mb-3 flex items-center justify-between lg:hidden">
+              <Label htmlFor="show-translation" className="text-sm font-medium">
+                Show Translation
+              </Label>
+              <Switch id="show-translation" checked={showTranslation} onCheckedChange={setShowTranslation} />
+            </div>
+
+            {/* Translation */}
+            <div
+              className={cn(
+                "text-sm leading-relaxed text-muted-foreground lg:text-base",
+                !showTranslation && "hidden lg:block",
+              )}
+            >
+              {/* needs to be dynaimic  */}
+              {ayahData.translation || "Loading..."}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Audio Player */}
+        <Card className="mb-4 lg:mb-6">
+          <CardContent className="p-4 lg:p-6">
+            <audio ref={audioRef} src={ayahData?.audioUrl || "Loading..."} loop={isLooping} muted={isMuted} />
+
+            {/* Progress Bar */}
+            <div className="mb-2">
+              <Slider
+                value={[currentTime]}
+                min={0}
+                max={duration || 100}
+                step={0.1}
+                onValueChange={handleProgressChange}
+                className="cursor-pointer"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={togglePlayPause}
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                  className="h-10 w-10 lg:h-9 lg:w-9"
+                >
+                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={rewindFiveSeconds}
+                  aria-label="Rewind 5 seconds"
+                  className="h-10 w-10 lg:h-9 lg:w-9"
+                >
+                  <Rewind className="h-4 w-4" />
+                </Button>
+
+                <Button
+                  variant={isLooping ? "default" : "outline"}
+                  size="icon"
+                  onClick={toggleLoop}
+                  aria-label={isLooping ? "Disable loop" : "Enable loop"}
+                  className={cn("h-10 w-10 lg:h-9 lg:w-9", isLooping ? "bg-emerald-600 hover:bg-emerald-700" : "")}
+                >
+                  <Repeat className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleMute}
+                  aria-label={isMuted ? "Unmute" : "Mute"}
+                  className="h-10 w-10 lg:h-9 lg:w-9"
+                >
+                  {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                </Button>
+
+                <Slider
+                  value={[volume]}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onValueChange={handleVolumeChange}
+                  className="w-20 lg:w-24"
+                />
+              </div>
+            </div>
+
+            <div className="mt-3 flex items-center gap-2 lg:mt-4">
+              <Label htmlFor="auto-play-next" className="text-sm">
+                Auto-play next ayah
+              </Label>
+              <Switch id="auto-play-next" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Memorization Controls */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Button
+            onClick={markAsMemorized}
+            disabled={isMemorized}
+            className={cn(
+              "flex h-12 items-center justify-center gap-2",
+              isMemorized ? "bg-emerald-600 hover:bg-emerald-600" : "",
+            )}
+          >
+            <Check className="h-4 w-4" />
+            {isMemorized ? "Marked as Memorized" : "Mark as Memorized"}
+          </Button>
+
+          <Button
+            onClick={goToNextAyah}
+            disabled={!isMemorized}
+            className="flex h-12 items-center justify-center gap-2"
+          >
+            Next Ayah
+            <ChevronRight className="h-4 w-4" />
+
+          </Button>
+          <Button
+            onClick={goToPreviousAyah}
+            disabled={!isMemorized}
+            className="flex h-12 items-center justify-center gap-2"
+          >
+            Previous Ayah
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
