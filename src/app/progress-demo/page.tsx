@@ -8,7 +8,12 @@ import { LockedProgressCard } from "@/components/locked-progress-card"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { getAyah } from "@/lib/quran-api"
 import ayahCounts from '../../../ayah_counts.json';
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "@/firebase"
 
+type MemorizedMap = {
+  [surah: number]: number[] // list of ayah numbers memorized in this surah
+}
 
 export default function ProgressDemoPage() {
   const [isMemorized, setIsMemorized] = useState(false)
@@ -16,10 +21,76 @@ export default function ProgressDemoPage() {
   const [ayahNumber, setAyahNumber] = useState(1);
   const [ayahData, setAyahData] = useState<any>(null);
   const [showCongrats, setShowCongrats] = useState(false);
+  const [memorized, setMemorized] = useState<MemorizedMap>({});
+  const [percentMemorized, setPercentMemorized] = useState(ayahNumber);
+
+  // Replace with real user ID
+  const userId = "user_123";
+
+  const syncToFirebase = async (memorized: Record<number, number[]>) => {
+    try {
+      console.log("Syncing to Firebase:", memorized); // ✅ Debug log
+      await setDoc(doc(db, "users", userId), { memorized }, { merge: true });
+    } catch (err) {
+      console.error("Error writing to Firebase:", err);
+    }
+  };
+  
 
   const handleMarkAsMemorized = () => {
-    setIsMemorized(true)
-  }
+    setIsMemorized(true);
+  
+    setMemorized((prev) => {
+      const updated = { ...prev };
+      if (!updated[surahNumber]) updated[surahNumber] = [];
+      if (!updated[surahNumber].includes(ayahNumber)) {
+        updated[surahNumber].push(ayahNumber);
+        syncToFirebase(updated); // 🔥 Sync to Firestore
+      }
+      return updated;
+    });
+  };
+
+  useEffect(() => {
+    const loadMemorizedFromFirebase = async () => {
+      try {
+        const docSnap = await getDoc(doc(db, "users", userId));
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.memorized) {
+            setMemorized(data.memorized);
+          }
+        }
+      } catch (err) {
+        console.error("Error reading from Firebase:", err);
+      }
+    };
+  
+    loadMemorizedFromFirebase();
+  }, []);
+  
+  
+  useEffect(() => {
+    const alreadyMemorized = memorized[surahNumber]?.includes(ayahNumber);
+    setIsMemorized(!!alreadyMemorized);
+  }, [ayahNumber, surahNumber, memorized]);
+  
+  // Load memorized from storage:
+  useEffect(() => {
+    const stored = localStorage.getItem("memorizedAyahs");
+    if (stored) {
+      setMemorized(JSON.parse(stored));
+    }
+  }, []);
+
+  // Save to storage whenever memorized updates:
+  useEffect(() => {
+    localStorage.setItem("memorizedAyahs", JSON.stringify(memorized));
+  }, [memorized]);
+
+  useEffect(() => {
+  setPercentMemorized(((ayahNumber ) / ayahCounts.ayah_counts[surahNumber - 1]) * 100)
+  }, [ayahNumber]);
 
   useEffect(() => {
     async function fetchAyah() {
@@ -125,6 +196,7 @@ export default function ProgressDemoPage() {
         {/* Progress Indicator */}
         <div className="mt-8">
           <h3 className="mb-2 text-sm font-medium text-gray-500">Progress</h3>
+          { Math.round(percentMemorized)}%
           <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
               className="h-full bg-emerald-500 transition-all duration-300"
@@ -135,6 +207,8 @@ export default function ProgressDemoPage() {
           </div>
           <div className="mt-1 text-right text-xs text-gray-500">
             {ayahNumber} of {ayahCounts.ayah_counts[surahNumber - 1]} ayahs memorized
+          </div>
+          <div className="mt-1 text-right text-xs text-gray-500">
           </div>
         </div>
       </div>
