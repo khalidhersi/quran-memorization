@@ -10,6 +10,14 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
+
 export const metadata: Metadata = {
   title: "Quran Memory",
   description: "A Quran memorization application",
