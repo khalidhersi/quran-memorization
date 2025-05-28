@@ -9,14 +9,14 @@ import { isMobile } from 'react-device-detect'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const { user } = useAuth()
 
   // Redirect to home if logged in
   useEffect(() => {
-    if (!loading && user) {
+    if ( user) {
       router.replace("/")
     }
-  }, [user, loading, router])
+  }, [user, router])
 
   // Catch redirect result (required after mobile login)
   useEffect(() => {
