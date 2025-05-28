@@ -81,7 +81,7 @@ const [pagesMemorized, setPagesMemorized] = useState<number>(0)
   
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className=" flex flex-col min-h-screen bg-background">
       <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
         <SidebarTrigger className="lg:hidden" />
         <div className="flex flex-1 items-center justify-between">
@@ -90,7 +90,7 @@ const [pagesMemorized, setPagesMemorized] = useState<number>(0)
         </div>
       </header>
 
-      <main className="p-4 lg:p-6 overflow-y-auto">
+      <main className="p-4 lg:p-6 flex-1 overflow-y-auto">
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardContent className="flex flex-col items-center justify-center p-4 lg:p-6">
