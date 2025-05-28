@@ -1,7 +1,18 @@
 'use client'
-import { createContext, useEffect, useState, ReactNode, useContext } from "react"
-import { getRedirectResult, onAuthStateChanged, signOut, User } from "firebase/auth"
-import { auth } from "@/firebase"
+import {
+  createContext,
+  useEffect,
+  useState,
+  ReactNode,
+  useContext,
+} from 'react'
+import {
+  onAuthStateChanged,
+  getRedirectResult,
+  signOut,
+  User,
+} from 'firebase/auth'
+import { auth } from '@/firebase'
 
 type AuthContextType = {
   user: User | null
@@ -20,33 +31,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // 🔧 DEBUG: Force logout on every refresh
-    // signOut(auth) // ⚠️ Comment this out for production
 
+        // 🔧 DEBUG: Force logout on every refresh
+    // signOut(auth) // ⚠️ Comment this out for production
+    // Handle redirect result first (important on mobile)
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          setUser(result.user)
+        }
+      })
+      .catch((error) => {
+        console.error('Redirect login result failed:', error)
+      })
+
+    // Then listen to auth state changes
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser)
       setLoading(false)
     })
+
     return () => unsubscribe()
   }, [])
-
-useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, setUser)
-
-  // Get redirect result
-  getRedirectResult(auth)
-    .then((result) => {
-      if (result?.user) {
-        setUser(result.user)
-      }
-    })
-    .catch((error) => {
-      console.error("Redirect login result failed:", error)
-    })
-
-  return () => unsubscribe()
-}, [])
-
 
   const logout = () => {
     signOut(auth)
