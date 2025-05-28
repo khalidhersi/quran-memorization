@@ -5,6 +5,7 @@ import { signInWithRedirect, getRedirectResult, signInWithPopup } from "firebase
 import { auth, googleProvider } from "@/firebase"
 import { useRouter } from "next/navigation"
 import { useAuth } from "../context/AuthContext" 
+import { isMobile } from 'react-device-detect'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -26,17 +27,14 @@ export default function LoginPage() {
 
 
   const handleGoogleLogin = async () => {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-  
     try {
       if (isMobile) {
         await signInWithRedirect(auth, googleProvider)
       } else {
         await signInWithPopup(auth, googleProvider)
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Google login failed:", error)
-      alert("Google login failed: " + (error.message || error.code))
     }
   }
   
