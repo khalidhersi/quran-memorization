@@ -6,17 +6,21 @@ import { usePathname, useRouter } from "next/navigation"
 import { useEffect } from "react"
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
 
   useEffect(() => {
-    if (!user && pathname !== "/login") {
-      router.replace("/login")
+    if (!loading && !user && pathname !== "/login") {
+      router.push('/dashboard'); 
     }
-  }, [user, pathname, router])
+  }, [user, pathname])
 
   if (!user && pathname !== "/login") return null
+
+
+if (user) return null; // already redirected
+
 
   return <>{children}</>
 }
