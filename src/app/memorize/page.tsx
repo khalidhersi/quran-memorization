@@ -24,6 +24,8 @@ import { TimerReset } from "lucide-react";
 import { doc, setDoc, getDoc, deleteDoc, getDocs, collection, Timestamp  } from "firebase/firestore";
 import { db } from "@/firebase"; // Adjust path if different
 import { getAuth } from "firebase/auth"; // Optional if user context is elsewhere
+import { LockedProgressCard } from "@/components/locked-progress-card"
+import { PrevProgressCard } from "@/components/prev-progress-card"
 
 type MemorizePage = {
   surahNumber: number;
@@ -400,7 +402,7 @@ const handleContinueFromSelection = () => {
 
       <div className="mx-auto max-w-4xl p-4 lg:p-6">
         {/* Reciter Selection */}
-        <div className="mb-4 lg:mb-3">
+        <div className="flex flex-col mb-4 lg:mb-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold lg:text-xl">
             {ayahData ? `${ayahData.surah} (${ayahData.number})` : "Loading..."}
@@ -641,24 +643,26 @@ const handleContinueFromSelection = () => {
             Not Memorized
           </Button>
 
-          <Button
+          {/* <Button
             onClick={goToPreviousAyah}
-            disabled={!isMemorized}
             className="flex h-12 items-center justify-center gap-2"
           >
           <ChevronLeft className="h-4 w-4" />
             Previous Ayah
           </Button>
+         */}
 
-          <Button
-            onClick={goToNextAyah}
-            disabled={!isMemorized}
-            className="flex h-12 items-center justify-center gap-2"
-          >
-            Next Ayah
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-         
+         <PrevProgressCard
+            title="Previous Ayah"
+            tooltipMessage="Memorize this ayah to unlock the next one"
+            onUnlockedClick={goToPreviousAyah} isLocked={false}        
+          />
+          <LockedProgressCard
+            title="Next Ayah"
+            isLocked={!isMemorized}
+            tooltipMessage="Memorize this ayah to unlock the next one"
+            onUnlockedClick={goToNextAyah}
+          />
         </div>
       </div>
     </div>
