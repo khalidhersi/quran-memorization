@@ -36,13 +36,13 @@ const [pagesMemorized, setPagesMemorized] = useState(0);
 
   useEffect(() => {
     const fetchMemorizedCount = async () => {
-      // const user = getAuth().currentUser;
+      const user = getAuth().currentUser;
       const userId = 123;
-      if (!userId) return;
+      if (!user) return;
 
       try {
         const memorizedRef = collection(db, "user_memorized_ayahs");
-        const q = query(memorizedRef, where("userId", "==", userId));
+        const q = query(memorizedRef, where("userId", "==", user.uid));
         const snapshot = await getDocs(q);
 
         setTotalMemorized(snapshot.size); // This is your total ayahs memorized
@@ -87,12 +87,13 @@ const [pagesMemorized, setPagesMemorized] = useState(0);
 
   useEffect(() => {
     const userId = 123; // replace with dynamic userId if available
-  
+    const user = getAuth().currentUser;
+    if (!user) return;
     async function countPagesMemorized() {
       try {
         // Get all memorized ayahs for user
         const memorizedRef = collection(db, "user_memorized_ayahs")
-        const q = query(memorizedRef, where("userId", "==", userId))
+        const q = query(memorizedRef, where("userId", "==", user.uid))
         const snapshot = await getDocs(q)
   
         // Create a map surah -> max ayah memorized
@@ -124,7 +125,7 @@ const [pagesMemorized, setPagesMemorized] = useState(0);
       }
     }
   
-    if (userId) {
+    if (user.uid) {
       countPagesMemorized()
     }
   }, [])

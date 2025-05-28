@@ -34,6 +34,7 @@ type MemorizePage = {
 
 interface UserMemorizedAyah {
   userId: string;
+  user: string
   surah: number;
   ayah: number;
   memorizedAt: Timestamp;
@@ -80,12 +81,12 @@ export default function MemorizePage() {
   
 
   const getLastMemorizedAyah = async () => {
-    // const user = getAuth().currentUser;
-    if (!userId) return null;
+    const user = getAuth().currentUser;
+    if (!user) return null;
   
     const snapshot = await getDocs(collection(db, "user_memorized_ayahs"));
     const userDocs = snapshot.docs
-      .filter(doc => doc.id.startsWith(userId))
+      .filter(doc => doc.id.startsWith(user.uid))
       .map(doc => {
         const data = doc.data() as UserMemorizedAyah;
         return {
@@ -126,11 +127,11 @@ export default function MemorizePage() {
   // 2️⃣ Check Memorized Status
   useEffect(() => {
     const checkMemorizedStatus = async () => {
-      // const user = getAuth().currentUser;
-      if (!userId) return;
+      const user = getAuth().currentUser;
+      if (!user) return;
 
-      const docRef = doc(db, "user_memorized_ayahs", `${userId}_${surahNumber}_${ayahNumber}`);
-      // const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
+      // const docRef = doc(db, "user_memorized_ayahs", `${userId}_${surahNumber}_${ayahNumber}`);
+      const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
       const docSnap = await getDoc(docRef);
 
       setIsMemorized(docSnap.exists());
@@ -261,17 +262,17 @@ useEffect(() => {
   // Mark ayah as memorized
   const markAsMemorized = async () => {
     try {
-      // const user = getAuth().currentUser;
-      if (!userId) {
+      const user = getAuth().currentUser;
+      if (!user) {
         alert("Please log in to track memorization.");
         return;
       }
   
-      const docRef = doc(db, "user_memorized_ayahs", `${userId}_${surahNumber}_${ayahNumber}`);
-      // const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
+      // const docRef = doc(db, "user_memorized_ayahs", `${userId}_${surahNumber}_${ayahNumber}`);
+      const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
       await setDoc(docRef, {
-        // userId: user.uid,
-        userId: 123,
+        userId: user.uid,
+        // userId: 123,
         surah: surahNumber,
         ayah: ayahNumber,
         memorizedAt: new Date(),
@@ -284,10 +285,10 @@ useEffect(() => {
   };
 
   const unmarkAsMemorized = async () => {
-    // const user = getAuth().currentUser;
-    if (!userId) return;
+    const user = getAuth().currentUser;
+    if (!user) return;
   
-    const docRef = doc(db, "user_memorized_ayahs", `${userId}_${surahNumber}_${ayahNumber}`);
+    const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
     await deleteDoc(docRef);
     setIsMemorized(false);
   };

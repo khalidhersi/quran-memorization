@@ -1,17 +1,36 @@
-'use client';
-import { createContext, useEffect, useState, ReactNode } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { auth } from "@/firebase";
+'use client'
+import { createContext, useEffect, useState, ReactNode, useContext } from "react"
+import { onAuthStateChanged, signOut, User } from "firebase/auth"
+import { auth } from "@/firebase"
 
-export const AuthContext = createContext<{ user: User | null }>({ user: null });
+const AuthContext = createContext<{
+  user: User | null
+  logout: () => void
+}>({
+  user: null,
+  logout: () => {},
+})
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, setUser);
-    return () => unsubscribe();
-  }, []);
+    // 🔧 DEBUG: Force logout on every refresh
+    // signOut(auth) // ⚠️ Comment this out for production
 
-  return <AuthContext.Provider value={{ user }}>{children}</AuthContext.Provider>;
-};
+    const unsubscribe = onAuthStateChanged(auth, setUser)
+    return () => unsubscribe()
+  }, [])
+
+  const logout = () => {
+    signOut(auth)
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, logout }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export const useAuth = () => useContext(AuthContext)

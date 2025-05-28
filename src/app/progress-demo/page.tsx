@@ -10,6 +10,7 @@ import { getAyah } from "@/lib/quran-api"
 import ayahCounts from '../../../ayah_counts.json';
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase"
+import { getAuth } from "firebase/auth"
 
 type MemorizedMap = {
   [surah: number]: number[] // list of ayah numbers memorized in this surah
@@ -28,8 +29,10 @@ export default function ProgressDemoPage() {
   const userId = "user_123";
 
   const syncToFirebase = async (memorized: Record<number, number[]>) => {
+    const user = getAuth().currentUser;
+    if (!user) return null;
     try {
-      await setDoc(doc(db, "users", userId), { memorized }, { merge: true });
+      await setDoc(doc(db, "users", user.uid), { memorized }, { merge: true });
     } catch (err) {
       console.error("Error writing to Firebase:", err);
     }
@@ -52,8 +55,10 @@ export default function ProgressDemoPage() {
 
   useEffect(() => {
     const loadMemorizedFromFirebase = async () => {
+      const user = getAuth().currentUser;
+    if (!user) return null;
       try {
-        const docSnap = await getDoc(doc(db, "users", userId));
+        const docSnap = await getDoc(doc(db, "users", user.uid));
         if (docSnap.exists()) {
           const data = docSnap.data();
           if (data.memorized) {
