@@ -34,11 +34,12 @@ export default function LoginPage() {
       } else {
         await signInWithPopup(auth, googleProvider)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Google login failed:", error)
-      alert("Google login failed. Please try again.")
+      alert("Google login failed: " + (error.message || error.code))
     }
   }
+  
   
 
   return (

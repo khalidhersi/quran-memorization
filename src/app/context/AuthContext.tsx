@@ -30,22 +30,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe()
   }, [])
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, setUser)
-  
-    // Handle Google redirect result
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          setUser(result.user)
-        }
-      })
-      .catch((error) => {
-        console.error("Redirect login failed:", error)
-      })
-  
-    return () => unsubscribe()
-  }, [])
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, setUser)
+
+  // Get redirect result
+  getRedirectResult(auth)
+    .then((result) => {
+      if (result?.user) {
+        setUser(result.user)
+      }
+    })
+    .catch((error) => {
+      console.error("Redirect login result failed:", error)
+    })
+
+  return () => unsubscribe()
+}, [])
+
 
   const logout = () => {
     signOut(auth)
