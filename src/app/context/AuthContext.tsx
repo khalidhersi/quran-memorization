@@ -11,6 +11,8 @@ import {
   getRedirectResult,
   signOut,
   User,
+  browserLocalPersistence,
+  setPersistence,
 } from 'firebase/auth'
 import { auth } from '@/firebase'
 
@@ -53,37 +55,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   //   return () => unsubscribe()
   // }, [])
+  
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
   
     const initAuth = async () => {
       try {
+        // 🔐 Ensure session persists (important on mobile)
+        await setPersistence(auth, browserLocalPersistence);
+  
+        // ⏪ Handle mobile redirect sign-ins
         const result = await getRedirectResult(auth);
         if (result?.user) {
           setUser(result.user);
+          // Optional: force reload to reflect user state immediately
+          // window.location.href = '/'; 
         }
   
+        // 👀 Watch for any auth state changes
         unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
           setUser(firebaseUser);
           setLoading(false);
         });
       } catch (err) {
-        console.error('Redirect login result failed:', err);
+        console.error('[Auth Error]', err);
         setLoading(false);
       }
     };
   
     initAuth();
-
-    useEffect(() => {
-      console.log('[Auth] loading:', loading);
-      console.log('[Auth] user:', user);
-    }, [loading, user]);
   
     return () => {
       if (unsubscribe) unsubscribe();
     };
   }, []);
+  
   
   
 
