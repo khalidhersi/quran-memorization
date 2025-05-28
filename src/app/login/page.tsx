@@ -72,8 +72,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
         <h1 className="text-2xl font-bold mb-4 text-gray-800">Welcome to Quran Memory</h1>
         <p className="mb-6 text-gray-600">Please sign in with your Google account to continue</p>
-
-        <button
+   {/* <button
           onClick={handleAnonymouslyLogin}
           className="flex items-center justify-center gap-3 w-full px-6 py-3 rounded-md bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition"
         >
@@ -86,7 +85,8 @@ export default function LoginPage() {
         >
           <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5" />
           Sign in with email
-        </button>
+        </button> */}
+     
         <button
           onClick={handleGoogleLogin}
           className="flex items-center justify-center gap-3 w-full px-6 py-3 rounded-md bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition"
