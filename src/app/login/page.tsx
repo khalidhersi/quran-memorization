@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { signInWithRedirect, getRedirectResult, signInWithPopup } from "firebase/auth"
 import { auth, googleProvider } from "@/firebase"
 import { useRouter } from "next/navigation"
-import { useAuth } from "../context/AuthContext"
+import { useAuth } from "../context/AuthContext" 
 
 export default function LoginPage() {
   const router = useRouter()
@@ -24,6 +24,7 @@ export default function LoginPage() {
     })
   }, [])
 
+
   const handleGoogleLogin = async () => {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
   
@@ -35,8 +36,10 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error("Google login failed:", error)
+      alert("Google login failed. Please try again.")
     }
   }
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center from-blue-50 to-blue-100">
