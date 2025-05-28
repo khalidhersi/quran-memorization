@@ -10,8 +10,9 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { StreakIndicator } from "@/components/streak-indicator"
 import { getAuth } from "firebase/auth";
 import { db } from "@/firebase"; // adjust path to your firebase config
-import { getDocs, collection, where, query } from "firebase/firestore";
+import { getDocs, collection, where, query, doc, getDoc } from "firebase/firestore";
 import lastAyahsPerPage from "../../lastAyahsPerPage.json"
+// import { startOfDay, endOfDay } from 'date-fns'; // or any date lib
 
 
 export default function Dashboard() {
@@ -29,6 +30,8 @@ export default function Dashboard() {
 
 const [totalMemorized, setTotalMemorized] = useState(0);
 const [pagesMemorized, setPagesMemorized] = useState(0);
+// const [dailyGoal, setDailyGoal] = useState(5); // e.g., goal is 5 pages/day
+// const [dailyProgress, setDailyProgress] = useState(0); // pages memorized today
 
 
   useEffect(() => {
@@ -125,7 +128,26 @@ const [pagesMemorized, setPagesMemorized] = useState(0);
       countPagesMemorized()
     }
   }, [])
+  // useEffect(() => {
+  //   const fetchDailyGoal = async () => {
+  //     const userId = 123;
+  //     const userRef = doc(db, "users", userId.toString());
   
+  //     try {
+  //       const userSnap = await getDoc(userRef);
+  //       if (userSnap.exists()) {
+  //         const userData = userSnap.data();
+  //         if (userData.dailyGoal) {
+  //           setDailyGoal(userData.dailyGoal);
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error("Failed to fetch daily goal:", error);
+  //     }
+  //   };
+  
+  //   fetchDailyGoal();
+  // }, []);
 
   return (
     <div className=" flex flex-col min-h-screen bg-background">
@@ -138,7 +160,7 @@ const [pagesMemorized, setPagesMemorized] = useState(0);
       </header>
 
       <main className="p-4 lg:p-6 flex-1 overflow-y-auto">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardContent className="flex flex-col items-center justify-center p-4 lg:p-6">
               <span className="text-sm font-medium text-muted-foreground">Ayahs Memorized</span>
@@ -162,16 +184,19 @@ const [pagesMemorized, setPagesMemorized] = useState(0);
               <Progress className="mt-2 h-2 w-full" value={(userData.lastPage / userData.totalPages) * 100} />
             </CardContent>
           </Card>
-          <Card className="md:col-span-1">
+          {/* <Card className="md:col-span-1">
             <CardContent className="flex flex-col items-center justify-center p-4 lg:p-6">
               <span className="text-sm font-medium text-muted-foreground">Daily Goal</span>
               <div className="mt-2 flex items-end gap-1">
-                <span className="text-2xl font-bold lg:text-3xl">3</span>
-                <span className="text-xs text-muted-foreground lg:text-sm">/ 5 pages</span>
+                <span className="text-2xl font-bold lg:text-3xl">{dailyProgress}</span>
+                <span className="text-xs text-muted-foreground lg:text-sm">/ {dailyGoal} pages</span>
               </div>
-              <Progress className="mt-2 h-2 w-full" value={60} />
+              <Progress
+                className="mt-2 h-2 w-full"
+                value={(dailyProgress / dailyGoal) * 100}
+              />
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
 
         <div className="mt-6 flex flex-col items-center lg:mt-8">
