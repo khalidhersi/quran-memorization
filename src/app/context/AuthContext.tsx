@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   //   return () => unsubscribe()
   // }, [])
   useEffect(() => {
-    let unsub: () => void;
+    let unsubscribe: (() => void) | undefined;
   
     const initAuth = async () => {
       try {
@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(result.user);
         }
   
-        unsub = onAuthStateChanged(auth, (firebaseUser) => {
+        unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
           setUser(firebaseUser);
           setLoading(false);
         });
@@ -74,11 +74,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   
     initAuth();
+
+    useEffect(() => {
+      console.log('[Auth] loading:', loading);
+      console.log('[Auth] user:', user);
+    }, [loading, user]);
   
     return () => {
-      if (unsub) unsub();
+      if (unsubscribe) unsubscribe();
     };
   }, []);
+  
   
 
   const logout = () => {
