@@ -23,5 +23,3 @@ export async function getAyah(surahNumber : any, ayahNumber: any) {
     const data = await res.json();
     return data.data;
   }
-  
-

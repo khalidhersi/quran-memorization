@@ -93,7 +93,7 @@ export default function ProgressDemoPage() {
   }, [memorized]);
 
   useEffect(() => {
-  setPercentMemorized(((ayahNumber ) / ayahCounts.ayah_counts[surahNumber - 1]) * 100)
+    setPercentMemorized(((ayahNumber ) / ayahCounts.ayah_counts[surahNumber - 1]) * 100)
   }, [ayahNumber]);
 
   useEffect(() => {
