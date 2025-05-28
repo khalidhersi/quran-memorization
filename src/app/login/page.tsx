@@ -1,22 +1,23 @@
 "use client"
 
 import { useEffect } from "react"
-import { signInWithRedirect, getRedirectResult, signInWithPopup } from "firebase/auth"
+import { signInWithRedirect, getRedirectResult, signInWithPopup, signInWithEmailAndPassword, signInAnonymously } from "firebase/auth"
 import { auth, googleProvider } from "@/firebase"
 import { useRouter } from "next/navigation"
 import { useAuth } from "../context/AuthContext" 
 import { isMobile } from 'react-device-detect'
 
+
 export default function LoginPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
 
   // Redirect to home if logged in
   useEffect(() => {
-    if ( user) {
+    if (!loading && user) {
       router.replace("/")
     }
-  }, [user, router])
+  }, [user, loading, router])
 
   // Catch redirect result (required after mobile login)
   useEffect(() => {
@@ -29,9 +30,13 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     try {
       if (isMobile) {
-        await signInWithRedirect(auth, googleProvider)
+        await signInWithRedirect(auth, googleProvider,)
+        await signInWithEmailAndPassword
+        await signInAnonymously
       } else {
         await signInWithPopup(auth, googleProvider)
+        await signInWithEmailAndPassword
+        await signInAnonymously
       }
     } catch (error) {
       console.error("Google login failed:", error)
