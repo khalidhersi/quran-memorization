@@ -1,35 +1,43 @@
 "use client"
 
 import { useEffect } from "react"
-import { signInWithPopup } from "firebase/auth"
+import {
+  signInWithRedirect,
+  getRedirectResult,
+  GoogleAuthProvider,
+} from "firebase/auth"
 import { auth, googleProvider } from "@/firebase"
 import { useRouter } from "next/navigation"
 import { useAuth } from "../context/AuthContext"
-
-import { signIn, signOut } from "next-auth/react"
-
-export function logout() {
-    signIn("google", { prompt: "login" })}
 
 export default function LoginPage() {
   const router = useRouter()
   const { user } = useAuth()
 
+  // Redirect if already logged in
   useEffect(() => {
     if (user) router.replace("/")
   }, [user, router])
 
-  const handleGoogleLogin = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider)
-      router.push("/")
-    } catch (error) {
-      console.error("Google login failed:", error)
-    }
+  // Handle Google redirect result
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          router.push("/")
+        }
+      })
+      .catch((error) => {
+        console.error("Google redirect login failed:", error)
+      })
+  }, [router])
+
+  const handleGoogleLogin = () => {
+    signInWithRedirect(auth, googleProvider)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center  from-blue-50 to-blue-100">
+    <div className="min-h-screen flex items-center justify-center from-blue-50 to-blue-100">
       <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
         <h1 className="text-2xl font-bold mb-4 text-gray-800">Welcome to Quran Memory</h1>
         <p className="mb-6 text-gray-600">Please sign in with your Google account to continue</p>
