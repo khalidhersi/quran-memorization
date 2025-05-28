@@ -35,18 +35,18 @@ export function AppSidebar() {
       icon: Calendar,
       href: "/progress-demo",
     },
-    {
-      title: "Progress Stats",
-      icon: BarChart,
-      href: "/progress-stats",
-    },
+    // {
+    //   title: "Progress Stats",
+    //   icon: BarChart,
+    //   href: "/progress-stats",
+    // },
+    // {
+    //   title: "Settings",
+    //   icon: Settings,
+    //   href: "/settings",
+    // },
     {
       title: "Settings",
-      icon: Settings,
-      href: "/settings",
-    },
-    {
-      title: "Memorization Settings",
       icon: Sliders,
       href: "/settings/memorization",
     },

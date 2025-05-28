@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Bell, Book, Clock, Save, User } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Bell, BellOff, Book, Clock, Save, User } from "lucide-react"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
+import { cn } from "@/lib/utils"
 
 // List of reciters
 const reciters = [
@@ -52,6 +53,17 @@ export default function MemorizationSettingsPage() {
     remindersEnabled: true,
     reminderTime: "18", // 6:00 PM default
   })
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
+  const [reminderTime, setReminderTime] = useState("18")
+
+  const handleNotificationToggle = () => {
+    setNotificationsEnabled(!notificationsEnabled)
+  }
+
+  // Handle time selection
+  const handleTimeChange = (value: string) => {
+    setReminderTime(value)
+  }
 
   // Handle memorization mode change
   const handleMemorizeModeChange = (value: string) => {

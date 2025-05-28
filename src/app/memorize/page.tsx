@@ -626,7 +626,7 @@ const handleContinueFromSelection = () => {
             )}
           >
             <Check className="h-4 w-4" />
-            {isMemorized ? "Marked as Memorized" : "Mark as Memorized"}
+            Marked as Memorized
           </Button>
 
           <Button
@@ -638,7 +638,7 @@ const handleContinueFromSelection = () => {
             )}
           >
             <Minus className="h-4 w-4" />
-            {isMemorized ? "Marked as Memorized" : "Mark as Memorized"}
+            Not Memorized
           </Button>
 
           <Button

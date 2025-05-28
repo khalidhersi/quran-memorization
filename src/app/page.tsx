@@ -11,6 +11,7 @@ import { StreakIndicator } from "@/components/streak-indicator"
 import { getAuth } from "firebase/auth";
 import { db } from "@/firebase"; // adjust path to your firebase config
 import { getDocs, collection, where, query } from "firebase/firestore";
+import lastAyahsPerPage from "../../lastAyahsPerPage.json"
 
 
 export default function Dashboard() {
@@ -27,7 +28,8 @@ export default function Dashboard() {
   })
 
 const [totalMemorized, setTotalMemorized] = useState(0);
-const [pagesMemorized, setPagesMemorized] = useState<number>(0)
+const [pagesMemorized, setPagesMemorized] = useState(0);
+
 
   useEffect(() => {
     const fetchMemorizedCount = async () => {
@@ -49,35 +51,80 @@ const [pagesMemorized, setPagesMemorized] = useState<number>(0)
     fetchMemorizedCount();
   }, []);
 
+  // useEffect(() => {
+  //   const userId = 123;
+
+  //   const fetchPages = async () => {
+
+  //     try {
+  //       const memorizedRef = collection(db, "user_memorized_ayahs")
+  //       const q = query(memorizedRef, where("userId", "==", userId))
+  //       const snapshot = await getDocs(q)
+
+  //       const pageSet = new Set<number>()
+
+  //       for (const doc of snapshot.docs) {
+  //         const { surah, ayah } = doc.data()
+  //         const res = await fetch(`https://api.alquran.cloud/v1/ayah/${surah}:${ayah}`)
+  //         const json = await res.json()
+  //         if (json?.data?.page) {
+  //           pageSet.add(json.data.page)
+  //         }
+  //       }
+
+  //       setPagesMemorized(pageSet.size)
+  //     } catch (err) {
+  //       console.error("Error fetching memorized pages:", err)
+  //     }
+  //   }
+
+  //   if (userId) fetchPages()
+  // }, [pagesMemorized])
+  
+
   useEffect(() => {
-    const userId = 123;
-
-    const fetchPages = async () => {
-
+    const userId = 123; // replace with dynamic userId if available
+  
+    async function countPagesMemorized() {
       try {
+        // Get all memorized ayahs for user
         const memorizedRef = collection(db, "user_memorized_ayahs")
         const q = query(memorizedRef, where("userId", "==", userId))
         const snapshot = await getDocs(q)
-
-        const pageSet = new Set<number>()
-
-        for (const doc of snapshot.docs) {
+  
+        // Create a map surah -> max ayah memorized
+        const userMemorizedMap : any = {}
+  
+        snapshot.docs.forEach(doc => {
           const { surah, ayah } = doc.data()
-          const res = await fetch(`https://api.alquran.cloud/v1/ayah/${surah}:${ayah}`)
-          const json = await res.json()
-          if (json?.data?.page) {
-            pageSet.add(json.data.page)
+          if (!userMemorizedMap[surah] || userMemorizedMap[surah] < ayah) {
+            userMemorizedMap[surah] = ayah
+          }
+        })
+  
+        // Count pages where last ayah is memorized
+        let memorizedPageCount = 0
+        for (const pageStr of Object.keys(lastAyahsPerPage)) {
+          const page : any = Number(pageStr)
+          const lastAyah = lastAyahsPerPage[page]
+          if (!lastAyah) continue
+  
+          const { surah, ayah } = lastAyah
+          if ((userMemorizedMap[surah] ?? 0) >= ayah) {
+            memorizedPageCount++
           }
         }
-
-        setPagesMemorized(pageSet.size)
+  
+        setPagesMemorized(memorizedPageCount)
       } catch (err) {
-        console.error("Error fetching memorized pages:", err)
+        console.error("Error calculating memorized pages:", err)
       }
     }
-
-    if (userId) fetchPages()
-  }, [pagesMemorized])
+  
+    if (userId) {
+      countPagesMemorized()
+    }
+  }, [])
   
 
   return (
@@ -128,7 +175,7 @@ const [pagesMemorized, setPagesMemorized] = useState<number>(0)
         </div>
 
         <div className="mt-6 flex flex-col items-center lg:mt-8">
-          <CircularProgressBar percentage={((totalMemorized/userData.totalAyahs))} size={180} />
+          <CircularProgressBar percentage={((totalMemorized/userData.totalAyahs)*100)} size={180} />
           <h2 className="mt-4 text-xl font-bold lg:text-2xl">{((totalMemorized/userData.totalAyahs) * 100).toFixed(2)}% Complete</h2>
           <p className="text-center text-sm text-muted-foreground lg:text-base">
             You've memorized {totalMemorized} ayahs so far. Keep going!
