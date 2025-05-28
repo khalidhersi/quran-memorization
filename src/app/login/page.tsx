@@ -1,39 +1,41 @@
 "use client"
 
 import { useEffect } from "react"
-import {
-  signInWithRedirect,
-  getRedirectResult,
-  GoogleAuthProvider,
-} from "firebase/auth"
+import { signInWithRedirect, getRedirectResult, signInWithPopup } from "firebase/auth"
 import { auth, googleProvider } from "@/firebase"
 import { useRouter } from "next/navigation"
 import { useAuth } from "../context/AuthContext"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
 
-  // Redirect if already logged in
+  // Redirect to home if logged in
   useEffect(() => {
-    if (user) router.replace("/")
-  }, [user, router])
+    if (!loading && user) {
+      router.replace("/")
+    }
+  }, [user, loading, router])
 
-  // Handle Google redirect result
+  // Catch redirect result (required after mobile login)
   useEffect(() => {
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          router.push("/")
-        }
-      })
-      .catch((error) => {
-        console.error("Google redirect login failed:", error)
-      })
-  }, [router])
+    getRedirectResult(auth).catch((error) => {
+      console.error("Google login failed:", error)
+    })
+  }, [])
 
-  const handleGoogleLogin = () => {
-    signInWithRedirect(auth, googleProvider)
+  const handleGoogleLogin = async () => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+  
+    try {
+      if (isMobile) {
+        await signInWithRedirect(auth, googleProvider)
+      } else {
+        await signInWithPopup(auth, googleProvider)
+      }
+    } catch (error) {
+      console.error("Google login failed:", error)
+    }
   }
 
   return (

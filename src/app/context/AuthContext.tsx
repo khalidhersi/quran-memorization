@@ -3,22 +3,30 @@ import { createContext, useEffect, useState, ReactNode, useContext } from "react
 import { onAuthStateChanged, signOut, User } from "firebase/auth"
 import { auth } from "@/firebase"
 
-const AuthContext = createContext<{
+type AuthContextType = {
   user: User | null
+  loading: boolean
   logout: () => void
-}>({
+}
+
+const AuthContext = createContext<AuthContextType>({
   user: null,
+  loading: true,
   logout: () => {},
 })
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // 🔧 DEBUG: Force logout on every refresh
     // signOut(auth) // ⚠️ Comment this out for production
 
-    const unsubscribe = onAuthStateChanged(auth, setUser)
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser)
+      setLoading(false)
+    })
     return () => unsubscribe()
   }, [])
 
@@ -27,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, logout }}>
+    <AuthContext.Provider value={{ user, loading, logout }}>
       {children}
     </AuthContext.Provider>
   )
