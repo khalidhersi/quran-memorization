@@ -12,15 +12,11 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!loading && !user && pathname !== "/login") {
-      router.push('/dashboard'); 
+      router.push("/login")
     }
-  }, [user, pathname])
+  }, [user, pathname, loading])
 
   if (!user && pathname !== "/login") return null
-
-
-if (user) return null; // already redirected
-
 
   return <>{children}</>
 }
