@@ -15,9 +15,10 @@ export default function LoginPage() {
   // Redirect to home if logged in
   useEffect(() => {
     if (!loading && user) {
-      router.replace("/")
+     router.push('/dashboard');
     }
-  }, [user, loading, router])
+  }, [user, loading])
+  
 
   // Catch redirect result (required after mobile login)
   useEffect(() => {
