@@ -1,56 +1,26 @@
 'use client'
 
 import { useEffect } from 'react'
-import {
-  signInWithRedirect,
-  signInWithPopup,
-} from 'firebase/auth'
+import { signInWithRedirect, signInWithPopup } from 'firebase/auth'
 import { auth, googleProvider } from '@/firebase'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../context/AuthContext'
 import { isMobile } from 'react-device-detect'
-
-function isSafari() {
-  return (
-    typeof navigator !== 'undefined' &&
-    /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
-  )
-}
 
 export default function LoginPage() {
   const router = useRouter()
   const { user, loading } = useAuth()
 
   useEffect(() => {
-    const redirected = localStorage.getItem('redirected')
-
     if (!loading && user) {
-      localStorage.removeItem('redirected')
-      // Safari needs slight delay to properly restore auth session
-      if (isSafari()) {
-        setTimeout(() => {
-          router.push('/')
-        }, 500)
-      } else {
-        router.push('/')
-      }
+      router.replace('/')
     }
-
-    if (!loading && !user && redirected === 'true') {
-      // Let Firebase hydrate session a bit longer on Safari
-      setTimeout(() => {
-        if (!auth.currentUser) {
-          console.warn('Firebase auth still empty after delay.')
-          localStorage.removeItem('redirected')
-        }
-      }, 3000)
-    }
-  }, [user, loading])
+  }, [user, loading, router])
+  
 
   const handleGoogleLogin = async () => {
     try {
-      if (isMobile || isSafari()) {
-        localStorage.setItem('redirected', 'true')
+      if (isMobile || typeof window !== 'undefined' && 'standalone' in window.navigator) {
         await signInWithRedirect(auth, googleProvider)
       } else {
         await signInWithPopup(auth, googleProvider)

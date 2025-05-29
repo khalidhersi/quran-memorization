@@ -32,27 +32,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const initAuth = async () => {
+    const checkAuth = async () => {
       try {
-        const result = await getRedirectResult(auth)
-        if (result?.user) {
-          setUser(result.user)
-          localStorage.setItem('redirected', 'true')
-        }
+        await getRedirectResult(auth) // resolves silently if no redirect
       } catch (err) {
-        console.error('Redirect login result failed:', err)
+        console.error('Redirect result error:', err)
       }
-
-      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+  
+      const unsub = onAuthStateChanged(auth, (firebaseUser) => {
         setUser(firebaseUser)
         setLoading(false)
       })
-
-      return () => unsubscribe()
+  
+      return () => unsub()
     }
-
-    initAuth()
+  
+    checkAuth()
   }, [])
+  
 
   const logout = () => {
     localStorage.removeItem('redirected')
