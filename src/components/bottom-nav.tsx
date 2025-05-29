@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Book, BarChart, Home, Settings } from "lucide-react"
+import { Book, BarChart, Home, Settings, PencilRulerIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function BottomNav() {
@@ -24,6 +24,7 @@ export function BottomNav() {
     //   icon: BarChart,
     //   href: "/progress-stats",
     // },
+    { title: "Test the Hafidh", icon: PencilRulerIcon, href: "/progress-demo" },
     {
       title: "Settings",
       icon: Settings,

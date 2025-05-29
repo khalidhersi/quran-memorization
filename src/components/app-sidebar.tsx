@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Book, Calendar, Home, Sliders } from "lucide-react"
+import { Book, PencilRulerIcon, Home, Sliders } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Sidebar,
@@ -20,10 +20,12 @@ export function AppSidebar() {
   const pathname = usePathname()
   const { isMobile, setOpenMobile } = useSidebar() // ✅ access context
 
+  if (isMobile) return null // ✅ Hide sidebar entirely on mobile
+
   const navItems = [
     { title: "Dashboard", icon: Home, href: "/" },
     { title: "Memorize", icon: Book, href: "/memorize" },
-    { title: "Test the Hafidh", icon: Calendar, href: "/progress-demo" },
+    { title: "Test the Hafidh", icon: PencilRulerIcon, href: "/progress-demo" },
     { title: "Settings", icon: Sliders, href: "/settings/memorization" },
   ]
 
