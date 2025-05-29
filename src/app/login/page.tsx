@@ -1,45 +1,40 @@
 "use client"
 
 import { useEffect } from "react"
-import { signInWithRedirect, signInWithPopup } from "firebase/auth"
-import { auth, googleProvider } from "@/firebase"
 import { useRouter } from "next/navigation"
 import { useAuth } from "../context/AuthContext"
-import { isMobile } from 'react-device-detect'
+import { signInWithPopup, signInWithRedirect } from "firebase/auth"
+import { auth, googleProvider } from "@/firebase"
+import { isMobile } from "react-device-detect"
 
 export default function LoginPage() {
-  const router = useRouter()
   const { user, loading } = useAuth()
+  const router = useRouter()
 
-  // ✅ Only redirect after loading finishes
   useEffect(() => {
-    if (!loading && user) {
-      router.push('/')
+    if (!loading) {
+      if (user) {
+        router.replace("/dashboard")
+      }
     }
-  }, [user, loading, router])
+  }, [user, loading])
 
   const handleGoogleLogin = async () => {
-    try {
-      if (isMobile) {
-        await signInWithRedirect(auth, googleProvider)
-      } else {
-        await signInWithPopup(auth, googleProvider)
-      }
-    } catch (error) {
-      console.error("Google login failed:", error)
+    if (isMobile) {
+      await signInWithRedirect(auth, googleProvider)
+    } else {
+      await signInWithPopup(auth, googleProvider)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center from-blue-50 to-blue-100">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
-        <h1 className="text-2xl font-bold mb-4 text-gray-800">Welcome to Quran Memory</h1>
-        <p className="mb-6 text-gray-600">Please sign in with your Google account to continue</p>
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="bg-white p-6 rounded shadow w-full max-w-sm text-center">
+        <h1 className="text-2xl font-bold mb-4">Welcome</h1>
         <button
           onClick={handleGoogleLogin}
-          className="flex items-center justify-center gap-3 w-full px-6 py-3 rounded-md bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition"
+          className="bg-blue-600 text-white px-4 py-2 rounded w-full"
         >
-          <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5" />
           Sign in with Google
         </button>
       </div>
