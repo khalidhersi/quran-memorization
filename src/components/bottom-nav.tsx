@@ -33,7 +33,7 @@ export function BottomNav() {
   ]
 
   return (
-    <nav className="border-t bg-background">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background">
       <div className="flex h-16 items-center justify-around">
         {navItems.map((item) => {
           if(!pathname) return;
