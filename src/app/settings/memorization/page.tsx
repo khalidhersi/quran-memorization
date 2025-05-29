@@ -322,10 +322,10 @@ export default function MemorizationSettingsPage() {
                   onChange={(e) => handleColorChange("background", e.target.value)}
                 />           
               </label> 
-              <label className="flex flex-col">
+              {/* <label className="flex flex-col">
                 Button Color
                 <input type="color" value={theme.primary} onChange={(e) => handleColorChange("primary", e.target.value)} />
-              </label>
+              </label> */}
               <label className="flex flex-col">
                 Font Color
                 <input type="color" value={theme.fontColor} onChange={(e) => handleColorChange("fontColor", e.target.value)} />
