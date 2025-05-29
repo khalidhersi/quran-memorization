@@ -14,8 +14,6 @@ export default function LoginPage() {
   const router = useRouter()
   const { user, loading } = useAuth()
 
-  localStorage.removeItem('redirected')
-
   useEffect(() => {
     const redirected = localStorage.getItem('redirected')
 
@@ -37,9 +35,14 @@ export default function LoginPage() {
     }
   }, [user, loading])
 
+  const isIosSafari = () => {
+    const ua = window.navigator.userAgent
+    return /iP(ad|od|hone)/i.test(ua) && /WebKit/i.test(ua) && !/CriOS|FxiOS/i.test(ua)
+  }
+  
   const handleGoogleLogin = async () => {
     try {
-      if (isMobile) {
+      if (isIosSafari()) {
         localStorage.setItem('redirected', 'true')
         await signInWithRedirect(auth, googleProvider)
       } else {
@@ -49,6 +52,7 @@ export default function LoginPage() {
       console.error('Google login failed:', error)
     }
   }
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center">
