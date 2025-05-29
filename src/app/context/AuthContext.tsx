@@ -32,31 +32,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const init = async () => {
+    const initAuth = async () => {
       try {
         const result = await getRedirectResult(auth)
         if (result?.user) {
           setUser(result.user)
         }
-      } catch (err) {
-        console.error('getRedirectResult failed:', err)
-      } finally {
-        // Always listen to auth state
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-          setUser(firebaseUser)
-          setLoading(false)
-        })
-        return unsubscribe
+      } catch (error) {
+        console.error('Redirect login error:', error)
       }
+
+      // This must come AFTER getRedirectResult
+      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        setUser(firebaseUser)
+        setLoading(false)
+      })
+
+      return () => unsubscribe()
     }
 
-    const unsubscribePromise = init()
-    return () => {
-      unsubscribePromise?.then(unsub => unsub && unsub())
-    }
+    initAuth()
   }, [])
 
-  const logout = () => signOut(auth)
+  const logout = () => {
+    signOut(auth)
+  }
 
   return (
     <AuthContext.Provider value={{ user, loading, logout }}>
