@@ -15,25 +15,14 @@ export default function LoginPage() {
   const { user, loading } = useAuth()
 
   useEffect(() => {
-    const redirected = localStorage.getItem('redirected')
-
-    // If user is signed in after redirect, redirect them to "/"
     if (!loading && user) {
-      localStorage.removeItem('redirected')
-      router.push('/')
-    }
-
-    // If user is not logged in, and came back from redirect
-    if (!loading && !user && redirected === 'true') {
-      // wait a bit more to allow Firebase to hydrate
+      // Optional delay to help Safari fully hydrate session
       setTimeout(() => {
-        if (!auth.currentUser) {
-          console.warn('Auth still empty after delay')
-          localStorage.removeItem('redirected')
-        }
-      }, 3000)
+        router.push('/');
+      }, 3000);
     }
-  }, [user, loading])
+  }, [user, loading]);
+  
 
   const isMobileSafari = () => {
     const ua = window.navigator.userAgent;
@@ -50,10 +39,6 @@ export default function LoginPage() {
     try {
         if (isMobileSafari()) {
             await signInWithRedirect(auth, googleProvider);
-          } 
-        else if (isMobile) {
-        localStorage.setItem('redirected', 'true')
-        await signInWithRedirect(auth, googleProvider)
       } else {
         await signInWithPopup(auth, googleProvider)
       }
