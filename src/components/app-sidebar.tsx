@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Book, Calendar, Home, Settings, Sliders, BarChart } from "lucide-react"
+import { Book, Calendar, Home, Sliders } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Sidebar,
@@ -13,58 +13,43 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar, // ✅ import hook
 } from "@/components/ui/sidebar"
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const { isMobile, setOpenMobile } = useSidebar() // ✅ access context
 
-  // Navigation items
   const navItems = [
-    {
-      title: "Dashboard",
-      icon: Home,
-      href: "/",
-    },
-    {
-      title: "Memorize",
-      icon: Book,
-      href: "/memorize",
-    },
-    {
-      title: "Test the Hafidh",
-      icon: Calendar,
-      href: "/progress-demo",
-    },
-    // {
-    //   title: "Progress Stats",
-    //   icon: BarChart,
-    //   href: "/progress-stats",
-    // },
-    // {
-    //   title: "Settings",
-    //   icon: Settings,
-    //   href: "/settings",
-    // },
-    {
-      title: "Settings",
-      icon: Sliders,
-      href: "/settings/memorization",
-    },
+    { title: "Dashboard", icon: Home, href: "/" },
+    { title: "Memorize", icon: Book, href: "/memorize" },
+    { title: "Test the Hafidh", icon: Calendar, href: "/progress-demo" },
+    { title: "Settings", icon: Sliders, href: "/settings/memorization" },
   ]
+
+  const handleNavClick = () => {
+    if (isMobile) {
+      setOpenMobile(false) // ✅ close sidebar on mobile
+    }
+  }
 
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-border">
         <div className="flex items-center gap-2 px-4 py-2">
           <Book className="h-6 w-6 text-emerald-600" />
-          <span className="text-lg font-semibold">Quran Memory</span>
+          <span className="text-m font-semibold">Memorize the Quran</span>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton asChild isActive={pathname === item.href}>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === item.href}
+                onClick={handleNavClick} // ✅ attach handler here
+              >
                 <Link href={item.href}>
                   <item.icon className="h-4 w-4" />
                   <span>{item.title}</span>

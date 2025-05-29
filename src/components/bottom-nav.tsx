@@ -10,7 +10,7 @@ export function BottomNav() {
 
   const navItems = [
     {
-      title: "Home",
+      title: "Dashboard",
       icon: Home,
       href: "/",
     },
@@ -19,11 +19,11 @@ export function BottomNav() {
       icon: Book,
       href: "/memorize",
     },
-    {
-      title: "Stats",
-      icon: BarChart,
-      href: "/progress-stats",
-    },
+    // {
+    //   title: "Stats",
+    //   icon: BarChart,
+    //   href: "/progress-stats",
+    // },
     {
       title: "Settings",
       icon: Settings,
@@ -35,6 +35,7 @@ export function BottomNav() {
     <nav className="border-t bg-background">
       <div className="flex h-16 items-center justify-around">
         {navItems.map((item) => {
+          if(!pathname) return;
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
           return (
             <Link

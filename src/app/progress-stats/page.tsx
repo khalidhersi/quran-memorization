@@ -8,9 +8,6 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { XpProgress } from "@/components/xp-progress"
 import { StreakIndicator } from "@/components/streak-indicator"
 import { StreakMilestoneReward } from "@/components/streak-milestone-reward"
-import { useContext } from "react"
-import { AuthContext } from "@/app/context/AuthContext"
-import { loadUserStats, saveUserStats, UserStats } from "@/app/utils/userStats"
 
 
 export default function ProgressStatsPage() {

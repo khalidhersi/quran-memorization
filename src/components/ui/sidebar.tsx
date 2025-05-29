@@ -11,7 +11,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { DialogTitle } from "@radix-ui/react-dialog" // ⬅ Add this too
 import { Skeleton } from "@/components/ui/skeleton"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden" // 👈 add this import
 import {
   Tooltip,
   TooltipContent,
@@ -206,7 +208,14 @@ const Sidebar = React.forwardRef<
             }
             side={side}
           >
-            <div className="flex h-full w-full flex-col">{children}</div>
+            {/* ✅ Add hidden accessible title */}
+            <VisuallyHidden>
+              <DialogTitle>Sidebar Navigation</DialogTitle>
+            </VisuallyHidden>
+
+            <div className="flex h-full w-full flex-col">
+              {children}
+            </div>
           </SheetContent>
         </Sheet>
       )
