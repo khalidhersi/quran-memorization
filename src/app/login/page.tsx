@@ -35,9 +35,23 @@ export default function LoginPage() {
     }
   }, [user, loading])
 
+  const isMobileSafari = () => {
+    const ua = window.navigator.userAgent;
+    return (
+      /iP(ad|hone|od)/.test(ua) &&
+      /WebKit/.test(ua) &&
+      !/CriOS/.test(ua) &&
+      !/FxiOS/.test(ua)
+    );
+  };
+  
+
   const handleGoogleLogin = async () => {
     try {
-      if (isMobile) {
+        if (isMobileSafari()) {
+            await signInWithRedirect(auth, googleProvider);
+          } 
+        else if (isMobile) {
         localStorage.setItem('redirected', 'true')
         await signInWithRedirect(auth, googleProvider)
       } else {
