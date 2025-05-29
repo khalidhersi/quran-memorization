@@ -28,7 +28,7 @@ export function BottomNav() {
     {
       title: "Settings",
       icon: Settings,
-      href: "/settings",
+      href: "/settings/memorization",
     },
   ]
 
