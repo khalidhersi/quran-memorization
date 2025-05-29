@@ -91,6 +91,7 @@ const [pagesMemorized, setPagesMemorized] = useState(0);
     if (!user) return;
     async function countPagesMemorized() {
       try {
+        if (!user) return;
         // Get all memorized ayahs for user
         const memorizedRef = collection(db, "user_memorized_ayahs")
         const q = query(memorizedRef, where("userId", "==", user.uid))
