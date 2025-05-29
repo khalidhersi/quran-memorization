@@ -1,5 +1,5 @@
-// context/AuthContext.tsx
 'use client'
+
 import {
   createContext,
   useEffect,
@@ -33,29 +33,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const initAuth = async () => {
+      const fromRedirect = localStorage.getItem('pendingRedirect') === 'true'
       try {
-        const result = await getRedirectResult(auth)
-        if (result?.user) {
-          setUser(result.user)
-          localStorage.setItem('redirected', 'true')
+        if (fromRedirect) {
+          const result = await getRedirectResult(auth)
+          if (result?.user) {
+            setUser(result.user)
+          }
+          localStorage.removeItem('pendingRedirect') // ✅ Clear flag
         }
-      } catch (err) {
-        console.error('Redirect login result failed:', err)
+      } catch (error) {
+        console.error('Redirect login error:', error)
+        localStorage.removeItem('pendingRedirect')
       }
-
+  
       const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
         setUser(firebaseUser)
         setLoading(false)
       })
-
+  
       return () => unsubscribe()
     }
-
+  
     initAuth()
   }, [])
-
+  
+  
   const logout = () => {
-    localStorage.removeItem('redirected')
     signOut(auth)
   }
 
