@@ -14,7 +14,7 @@ export default function LoginPage() {
   // ✅ Only redirect after loading finishes
   useEffect(() => {
     if (!loading && user) {
-      router.push('/dashboard')
+      router.push('/')
     }
   }, [user, loading, router])
 
