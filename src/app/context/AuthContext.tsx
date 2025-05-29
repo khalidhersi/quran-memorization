@@ -54,7 +54,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initAuth()
   }, [])
 
-
   const logout = () => {
     localStorage.removeItem('redirected')
     signOut(auth)
