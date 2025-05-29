@@ -42,11 +42,7 @@ export default function LoginPage() {
   
   const handleGoogleLogin = async () => {
     try {
-      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
-      const forceRedirect = isIOS && isSafari
-  
-      if (forceRedirect) {
+      if (isIosSafari()) {
         localStorage.setItem('redirected', 'true')
         await signInWithRedirect(auth, googleProvider)
       } else {
@@ -56,7 +52,6 @@ export default function LoginPage() {
       console.error('Google login failed:', error)
     }
   }
-  
   
 
   return (
