@@ -7,12 +7,14 @@ import {
 } from 'firebase/auth'
 import { auth, googleProvider } from '@/firebase'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '../context/AuthContext'
 import { isMobile } from 'react-device-detect'
 
 export default function LoginPage() {
   const router = useRouter()
   const { user, loading } = useAuth()
+
+  localStorage.removeItem('redirected')
 
   useEffect(() => {
     const redirected = localStorage.getItem('redirected')
