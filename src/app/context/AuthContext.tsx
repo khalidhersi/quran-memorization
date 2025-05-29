@@ -33,27 +33,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const initAuth = async () => {
+      const fromRedirect = localStorage.getItem('pendingRedirect') === 'true'
       try {
-        const result = await getRedirectResult(auth)
-        if (result?.user) {
-          setUser(result.user)
+        if (fromRedirect) {
+          const result = await getRedirectResult(auth)
+          if (result?.user) {
+            setUser(result.user)
+          }
+          localStorage.removeItem('pendingRedirect') // ✅ Clear flag
         }
       } catch (error) {
         console.error('Redirect login error:', error)
+        localStorage.removeItem('pendingRedirect')
       }
-
-      // This must come AFTER getRedirectResult
+  
       const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
         setUser(firebaseUser)
         setLoading(false)
       })
-
+  
       return () => unsubscribe()
     }
-
+  
     initAuth()
   }, [])
-
+  
   const logout = () => {
     signOut(auth)
   }
