@@ -14,31 +14,32 @@ export default function LoginPage() {
   const router = useRouter()
   const { user, loading } = useAuth()
 
-  useEffect(() => {
-    if (!loading && user) {
-      // Optional delay to help Safari fully hydrate session
-      setTimeout(() => {
-        router.push('/');
-      }, 3000);
-    }
-  }, [user, loading]);
-  
+  // ✅ Detect Safari specifically
+  const isSafari = typeof navigator !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 
-  const isMobileSafari = () => {
-    const ua = window.navigator.userAgent;
-    return (
-      /iP(ad|hone|od)/.test(ua) &&
-      /WebKit/.test(ua) &&
-      !/CriOS/.test(ua) &&
-      !/FxiOS/.test(ua)
-    );
-  };
-  
+  useEffect(() => {
+    const redirected = localStorage.getItem('redirected')
+
+    if (!loading && user) {
+      localStorage.removeItem('redirected')
+      router.push('/')
+    }
+
+    if (!loading && !user && redirected === 'true') {
+      setTimeout(() => {
+        if (!auth.currentUser) {
+          console.warn('Auth still empty after delay')
+          localStorage.removeItem('redirected')
+        }
+      }, 3000)
+    }
+  }, [user, loading])
 
   const handleGoogleLogin = async () => {
     try {
-        if (isMobileSafari()) {
-            await signInWithRedirect(auth, googleProvider);
+      if (isMobile || isSafari) {
+        localStorage.setItem('redirected', 'true')
+        await signInWithRedirect(auth, googleProvider)
       } else {
         await signInWithPopup(auth, googleProvider)
       }
