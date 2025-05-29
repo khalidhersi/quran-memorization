@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Bell, BellOff, Book, Clock, Save, User } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,8 @@ import {
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { cn } from "@/lib/utils"
+import { useTheme } from "../../context/theme-context"
+import type { ThemeSettings } from "../../../app/context/theme-context"
 
 // List of reciters
 const reciters = [
@@ -55,6 +57,43 @@ export default function MemorizationSettingsPage() {
   })
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const [reminderTime, setReminderTime] = useState("18")
+   
+
+  const { theme, setTheme } = useTheme()
+
+  const handleColorChange = (type: "background" | "primary" | "fontColor", value: string) => {
+    setTheme({ ...theme, [type]: value })
+  }
+  
+  // bg color when reset btn pressed
+  const defaultTheme: ThemeSettings = {
+    background: "#00000", // example default
+    primary: "142.1 70.6% 45.3%", 
+    fontColor: "#ffffff"   // ✅ Add this if using `theme.primary`
+  }
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const storedTheme = localStorage.getItem("theme-settings")
+    if (storedTheme) {
+      try {
+        setTheme(JSON.parse(storedTheme))
+      } catch {
+        console.warn("Invalid theme settings in localStorage.")
+      }
+    }
+  }, [])
+  
+   // Save to localStorage when theme changes
+   useEffect(() => {
+    localStorage.setItem("theme-settings", JSON.stringify(theme))
+  }, [theme])
+  
+  const resetTheme = () => {
+    setTheme(defaultTheme)
+    localStorage.removeItem("theme-settings")
+  }
+  
 
   const handleNotificationToggle = () => {
     setNotificationsEnabled(!notificationsEnabled)
@@ -264,6 +303,38 @@ export default function MemorizationSettingsPage() {
                 </SelectContent>
               </Select>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Customize Theme</CardTitle>
+            <CardDescription>Choose how your app looks</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Background */}
+            <div className="flex gap-4">
+              <label className="flex flex-col ">
+                Background
+                <input
+                  type="color"
+                  value={theme.background || "#00000"} // fallback if undefined
+                  onChange={(e) => handleColorChange("background", e.target.value)}
+                />           
+              </label> 
+              <label className="flex flex-col">
+                Button Color
+                <input type="color" value={theme.primary} onChange={(e) => handleColorChange("primary", e.target.value)} />
+              </label>
+              <label className="flex flex-col">
+                Font Color
+                <input type="color" value={theme.fontColor} onChange={(e) => handleColorChange("fontColor", e.target.value)} />
+              </label>
+            </div>
+             
+            <Button onClick={resetTheme} variant="destructive" className="mt-4">
+              Reset to Default
+            </Button>
           </CardContent>
         </Card>
 

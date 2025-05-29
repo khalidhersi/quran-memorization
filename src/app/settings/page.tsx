@@ -62,6 +62,9 @@ export default function SettingsPage() {
     }
   })
 
+
+
+ 
   // Handle notification toggle
   const handleNotificationToggle = () => {
     setNotificationsEnabled(!notificationsEnabled)
@@ -242,8 +245,11 @@ export default function SettingsPage() {
           </CardFooter>
         </Card>
 
+       
+
+
         {/* Streak Milestone Reward Popover */}
-        <Popover open={showMilestoneReward} onOpenChange={setShowMilestoneReward}>
+        {/* <Popover open={showMilestoneReward} onOpenChange={setShowMilestoneReward}>
           <PopoverTrigger asChild>
             <div className="hidden">Trigger</div>
           </PopoverTrigger>
@@ -268,7 +274,7 @@ export default function SettingsPage() {
               </Button>
             </div>
           </PopoverContent>
-        </Popover>
+        </Popover> */}
       </div>
     </div>
   )

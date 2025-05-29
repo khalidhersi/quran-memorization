@@ -12,7 +12,6 @@ import { getAuth } from "firebase/auth";
 import { db } from "@/firebase"; // adjust path to your firebase config
 import { getDocs, collection, where, query, doc, getDoc } from "firebase/firestore";
 import lastAyahsPerPage from "../../lastAyahsPerPage.json"
-// import { startOfDay, endOfDay } from 'date-fns'; // or any date lib
 
 
 export default function Dashboard() {
