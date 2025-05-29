@@ -1,7 +1,19 @@
 'use client'
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+
+import {
+  createContext,
+  useEffect,
+  useState,
+  ReactNode,
+  useContext,
+} from 'react'
+import {
+  onAuthStateChanged,
+  getRedirectResult,
+  signOut,
+  User,
+} from 'firebase/auth'
 import { auth } from '@/firebase'
-import { onAuthStateChanged, getRedirectResult, signOut, User } from 'firebase/auth'
 
 type AuthContextType = {
   user: User | null
@@ -20,28 +32,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const checkRedirect = async () => {
+    const init = async () => {
       try {
         const result = await getRedirectResult(auth)
         if (result?.user) {
-          console.log("Redirected user:", result.user)
           setUser(result.user)
         }
-      } catch (e) {
-        console.error("getRedirectResult error:", e)
+      } catch (err) {
+        console.error('getRedirectResult failed:', err)
+      } finally {
+        // Always listen to auth state
+        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+          setUser(firebaseUser)
+          setLoading(false)
+        })
+        return unsubscribe
       }
-
-      // Listen to future changes after handling redirect
-      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-        console.log("Auth state changed:", firebaseUser)
-        setUser(firebaseUser)
-        setLoading(false)
-      })
-
-      return () => unsubscribe()
     }
 
-    checkRedirect()
+    const unsubscribePromise = init()
+    return () => {
+      unsubscribePromise?.then(unsub => unsub && unsub())
+    }
   }, [])
 
   const logout = () => signOut(auth)
