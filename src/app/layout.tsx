@@ -27,7 +27,7 @@ export const metadata = {
                   <SidebarProvider>
                     <ProtectedRoute>
                       {/* ✅ All your app content including SettingsPage is now wrapped in the custom ThemeProvider */}
-                      <div className="flex min-h-screen flex-col">
+                      <div className="flex min-h-screen flex-col pb-20">
                         <div className="flex flex-1 overflow-hidden">
                           <div className="hidden lg:block">
                             <AppSidebar />
