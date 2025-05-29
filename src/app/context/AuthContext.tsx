@@ -58,6 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initAuth()
   }, [])
   
+  
   const logout = () => {
     signOut(auth)
   }
