@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect } from 'react'
-import { signInWithRedirect, signInWithPopup } from 'firebase/auth'
+import {
+  signInWithRedirect,
+  signInWithPopup,
+} from 'firebase/auth'
 import { auth, googleProvider } from '@/firebase'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../context/AuthContext'
@@ -12,15 +15,30 @@ export default function LoginPage() {
   const { user, loading } = useAuth()
 
   useEffect(() => {
+    const redirected = localStorage.getItem('redirected')
+
+    // If user is signed in after redirect, redirect them to "/"
     if (!loading && user) {
-      router.replace('/')
+      localStorage.removeItem('redirected')
+      router.push('/')
     }
-  }, [user, loading, router])
-  
+
+    // If user is not logged in, and came back from redirect
+    if (!loading && !user && redirected === 'true') {
+      // wait a bit more to allow Firebase to hydrate
+      setTimeout(() => {
+        if (!auth.currentUser) {
+          console.warn('Auth still empty after delay')
+          localStorage.removeItem('redirected')
+        }
+      }, 3000)
+    }
+  }, [user, loading])
 
   const handleGoogleLogin = async () => {
     try {
-      if (isMobile || typeof window !== 'undefined' && 'standalone' in window.navigator) {
+      if (isMobile) {
+        localStorage.setItem('redirected', 'true')
         await signInWithRedirect(auth, googleProvider)
       } else {
         await signInWithPopup(auth, googleProvider)
