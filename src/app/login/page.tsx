@@ -11,10 +11,10 @@ export default function LoginPage() {
   const router = useRouter()
   const { user, loading } = useAuth()
 
-  // Redirect to dashboard if already logged in
+  // ✅ Only redirect after loading finishes
   useEffect(() => {
     if (!loading && user) {
-      router.push('/')
+      router.push('/dashboard')
     }
   }, [user, loading, router])
 
