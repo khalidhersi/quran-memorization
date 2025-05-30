@@ -64,7 +64,7 @@ export default function LoginPage() {
   }
 
  // SIGN UP with email
-const handleEmailSignup = async (email: string, password: string, username: string) => {
+const handleEmailSignup = async (email: string, password: string) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
