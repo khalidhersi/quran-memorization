@@ -56,13 +56,25 @@ export default function LoginPage() {
     }
   }
 
-  const handleAnonymousLogin = async () => {
-    try {
-      await signInAnonymously(auth)
-    } catch (error) {
-      console.error('Anonymous login failed:', error)
-    }
-  }
+  // const handleAnonymousLogin = async () => {
+  //   try {
+  //     const userCredential = await signInAnonymously(auth);
+  //     const user = userCredential.user;
+  
+  //     // Save anonymous data to default document
+  //     const defaultUserId = "user_123";
+  //     await setDoc(doc(db, "users", defaultUserId), {
+  //       isAnonymous: true,
+  //       uid: user.uid, // Track actual Firebase UID for debugging
+  //       createdAt: new Date()
+  //     });
+  
+  //     console.log("Anonymous user logged in and saved as user_123");
+  //   } catch (error: any) {
+  //     console.error("Anonymous login error:", error.message);
+  //   }
+  // };
+  
 
  // SIGN UP with email
 const handleEmailSignup = async (email: string, password: string) => {
@@ -162,12 +174,12 @@ const handleEmailLogin = async (email: string, password: string) => {
         </div>
         
 
-        <button
+        {/* <button
           onClick={handleAnonymousLogin}
           className="w-fit px-6 py-2 rounded-md bg-amber-700 text-white hover:bg-amber-900"
         >
           Continue as Guest
-        </button>
+        </button> */}
       </div>
     </div>
   )
