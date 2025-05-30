@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
 
   useEffect(() => {
     const redirected = localStorage.getItem('redirected')
@@ -88,6 +89,12 @@ const handleEmailLogin = async (email: string, password: string) => {
     console.log("Logged in with email:", userCredential.user.email);
   } catch (error: any) {
     console.error("Login error:", error.message);
+    
+    if(error.message.includes("credential")){
+      setErrorMsg("Password")
+    } if(error.message.includes("email")){
+      setErrorMsg("Email")
+    } 
   }
 };
 
@@ -112,7 +119,7 @@ const handleEmailLogin = async (email: string, password: string) => {
 
         <div className="text-gray-500 text-sm">or</div>
 
-        <div className="flex flex-col items-center justify-centerspace-y-3 gap-4">
+        <div className="flex flex-col items-center justify-center space-y-3 gap-1">
           <input
             type="email"
             placeholder="Email"
@@ -127,7 +134,10 @@ const handleEmailLogin = async (email: string, password: string) => {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full px-4 py-2 border rounded-md text-center"
           />
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {errorMsg && 
+            <p className="w-full px-2 py-0.5 text-l text-center bg-red-600 text-white">
+                Incorrect {errorMsg} 
+            </p>}
 
           {isSignUp && <button
             className="w-fit px-6 py-2 rounded-md text-white text-xl bg-green-700 hover:bg-green-800"
