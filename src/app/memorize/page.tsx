@@ -408,7 +408,7 @@ const handleContinueFromSelection = () => {
             <h2 className="text-lg font-semibold lg:text-xl">
             {ayahData ? `${ayahData.surah} (${ayahData.number})` : "Loading..."}
             </h2>
-            
+            <div className="flex items-center gap-2">
               <label className="flex items-center gap-2">
                 <span>Surah:</span>
                 <select
@@ -445,10 +445,11 @@ const handleContinueFromSelection = () => {
 
               <button
                 onClick={handleContinueFromSelection}
-                className="bg-green-600 text-white px-2 py-0.5 m- rounded hover:bg-green-700 text-xs"
+                className="bg-green-600 text-white px-2 py-0.5 m- rounded hover:bg-green-700 text-xs shrink"
               >
                 Continue
               </button>
+              </div>
 
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Reciter:</span>
