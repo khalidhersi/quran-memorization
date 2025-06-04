@@ -26,6 +26,7 @@ import { db } from "@/firebase"; // Adjust path if different
 import { getAuth } from "firebase/auth"; // Optional if user context is elsewhere
 import { LockedProgressCard } from "@/components/locked-progress-card"
 import { PrevProgressCard } from "@/components/prev-progress-card"
+import { useAuth } from "../context/AuthContext"
 
 type MemorizePage = {
   surahNumber: number;
@@ -67,6 +68,7 @@ export default function MemorizePage() {
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isMemorized, setIsMemorized] = useState(false);
   const [canGoNext, setCanGoNext] = useState(false);
+  const { user, loading } = useAuth();
 
 
   // both ways load latest ayah can be eoieither used
@@ -166,11 +168,10 @@ export default function MemorizePage() {
     const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
     const docSnap = await getDoc(docRef);
 
-    const memorized = docSnap.exists();
-    setIsMemorized(memorized);
-    setCanGoNext(memorized);
-  };
-
+  setIsMemorized(docSnap.exists());
+    };
+     
+  
   checkMemorizedStatus();
 }, [surahNumber, ayahNumber]);
 
@@ -295,15 +296,19 @@ useEffect(() => {
   }
 
   // Mark ayah as memorized
-  const markAsMemorized = async () => {
-  try {
-    const user = getAuth().currentUser;
-    if (!user) {
-      alert("Please log in to track memorization.");
-      return;
-    }
+const markAsMemorized = async () => {
+  if (loading) return; // ✅ auth still loading
+  if (!user) {
+    alert("Please log in to track memorization.");
+    return;
+  }
 
-    const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
+  try {
+    const docRef = doc(
+      db,
+      "user_memorized_ayahs",
+      `${user.uid}_${surahNumber}_${ayahNumber}`
+    );
     await setDoc(docRef, {
       userId: user.uid,
       surah: surahNumber,
@@ -312,7 +317,6 @@ useEffect(() => {
     });
 
     setIsMemorized(true);
-    setCanGoNext(true); // ✅ unlock Next button
   } catch (err) {
     console.error("Failed to mark as memorized:", err);
   }
@@ -320,13 +324,24 @@ useEffect(() => {
 
 
   const unmarkAsMemorized = async () => {
-    const user = getAuth().currentUser;
-    if (!user) return;
-  
-    const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
+  if (loading) return; // ⏳ Wait for auth to finish
+  if (!user) return; // 🚫 No user logged in
+
+  try {
+    const docRef = doc(
+      db,
+      "user_memorized_ayahs",
+      `${user.uid}_${surahNumber}_${ayahNumber}`
+    );
+
     await deleteDoc(docRef);
+
     setIsMemorized(false);
-  };
+  } catch (err) {
+    console.error("🔥 Failed to unmark memorization:", err);
+    alert("Something went wrong while unmarking. Please try again.");
+  }
+};
 
   const goToNextAyah = () => {
     setIsMemorized(false);
@@ -675,7 +690,7 @@ const handleContinueFromSelection = () => {
           />
           <LockedProgressCard
             title="Next Ayah"
-            isLocked={!canGoNext} // 🔒 Disable unless marked
+            isLocked={!isMemorized} // 🔒 Disable unless marked
             tooltipMessage="Memorize this ayah to unlock the next one"
             onUnlockedClick={goToNextAyah}
           />
