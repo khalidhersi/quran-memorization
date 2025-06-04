@@ -71,69 +71,71 @@ export default function MemorizePage() {
 
   // both ways load latest ayah can be eoieither used
 
-  // useEffect(() => {
-  //   const loadLastMemorized = async () => {
-  //     const last = await getLastMemorizedAyah();
-  //     if (last) {
-  //       setSurahNumber(last.surah);
-  //       setAyahNumber(last.ayah);
-  //     }
-  //   };
-  //   loadLastMemorized();
-  // }, []);
-  
-
-  // const getLastMemorizedAyah = async () => {
-  //   const user = getAuth().currentUser;
-  //   if (!user) return null;
-  
-  //   const snapshot = await getDocs(collection(db, "user_memorized_ayahs"));
-  //   const userDocs = snapshot.docs
-  //     .filter(doc => doc.id.startsWith(user.uid))
-  //     .map(doc => {
-  //       const data = doc.data() as UserMemorizedAyah;
-  //       return {
-  //         id: doc.id,
-  //         ...data
-  //       };
-  //     })
-  //     .sort((a, b) => b.memorizedAt.seconds - a.memorizedAt.seconds); // Newest first
-  
-  //   return userDocs.length > 0
-  //     ? {
-  //         surah: userDocs[0].surah,
-  //         ayah: userDocs[0].ayah,
-  //       }
-  //     : null;
-  // };
-
-    useEffect(() => {
-    const loadLastMemorizedAyah = async () => {
-      const user = getAuth().currentUser;
-      if (!user) return;
-
-      const userPrefix = `${user.uid}_`;
-      const snapshot = await getDocs(collection(db, "user_memorized_ayahs"));
-      const userDocs = snapshot.docs.filter(doc => doc.id.startsWith(userPrefix));
-
-      if (userDocs.length === 0) return;
-
-      // Sort by timestamp (latest memorized)
-      userDocs.sort((a, b) => {
-        const aDate = a.data().memorizedAt?.toDate?.() || new Date(0);
-        const bDate = b.data().memorizedAt?.toDate?.() || new Date(0);
-        return bDate - aDate;
-      });
-
-      const lastDoc = userDocs[0];
-      const { surah, ayah } = lastDoc.data();
-
-      setSurahNumber(surah);
-      setAyahNumber(ayah);
+  useEffect(() => {
+    const loadLastMemorized = async () => {
+      const last = await getLastMemorizedAyah();
+      if (last) {
+        setSurahNumber(last.surah);
+        setAyahNumber(last.ayah);
+      }
     };
-
-    loadLastMemorizedAyah();
+    loadLastMemorized();
   }, []);
+  
+
+  const getLastMemorizedAyah = async () => {
+    const user = getAuth().currentUser;
+    if (!user) return null;
+  
+    const snapshot = await getDocs(collection(db, "user_memorized_ayahs"));
+    const userDocs = snapshot.docs
+      .filter(doc => doc.id.startsWith(user.uid))
+      .map(doc => {
+        const data = doc.data() as UserMemorizedAyah;
+        return {
+          id: doc.id,
+          ...data
+        };
+      })
+      .sort((a, b) => b.memorizedAt.seconds - a.memorizedAt.seconds); // Newest first
+  
+    return userDocs.length > 0
+      ? {
+          surah: userDocs[0].surah,
+          ayah: userDocs[0].ayah,
+        }
+      : null;
+  };
+
+  // both ways load latest ayah can be eoieither used
+
+  //   useEffect(() => {
+  //   const loadLastMemorizedAyah = async () => {
+  //     const user = getAuth().currentUser;
+  //     if (!user) return;
+
+  //     const userPrefix = `${user.uid}_`;
+  //     const snapshot = await getDocs(collection(db, "user_memorized_ayahs"));
+  //     const userDocs = snapshot.docs.filter(doc => doc.id.startsWith(userPrefix));
+
+  //     if (userDocs.length === 0) return;
+
+  //     // Sort by timestamp (latest memorized)
+  //     userDocs.sort((a, b) => {
+  //       const aDate = a.data().memorizedAt?.toDate?.() || new Date(0);
+  //       const bDate = b.data().memorizedAt?.toDate?.() || new Date(0);
+  //       return bDate - aDate;
+  //     });
+
+  //     const lastDoc = userDocs[0];
+  //     const { surah, ayah } = lastDoc.data();
+
+  //     setSurahNumber(surah);
+  //     setAyahNumber(ayah);
+  //   };
+
+  //   loadLastMemorizedAyah();
+  // }, []);
 
   useEffect(() => {
     setSelectedSurah(surahNumber);
