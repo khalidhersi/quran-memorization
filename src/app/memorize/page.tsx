@@ -60,49 +60,80 @@ export default function MemorizePage() {
   const [showTranslation, setShowTranslation] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const userId = "user_123";
   const [surahNumber, setSurahNumber] = useState(1);
   const [ayahNumber, setAyahNumber] = useState(1);
   const [ayahData, setAyahData] = useState<any>(null);
   const [audioUrl, setAudioUrl] = useState('');
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isMemorized, setIsMemorized] = useState(false);
+  const [canGoNext, setCanGoNext] = useState(false);
 
-  useEffect(() => {
-    const loadLastMemorized = async () => {
-      const last = await getLastMemorizedAyah();
-      if (last) {
-        setSurahNumber(last.surah);
-        setAyahNumber(last.ayah);
-      }
+
+  // both ways load latest ayah can be eoieither used
+
+  // useEffect(() => {
+  //   const loadLastMemorized = async () => {
+  //     const last = await getLastMemorizedAyah();
+  //     if (last) {
+  //       setSurahNumber(last.surah);
+  //       setAyahNumber(last.ayah);
+  //     }
+  //   };
+  //   loadLastMemorized();
+  // }, []);
+  
+
+  // const getLastMemorizedAyah = async () => {
+  //   const user = getAuth().currentUser;
+  //   if (!user) return null;
+  
+  //   const snapshot = await getDocs(collection(db, "user_memorized_ayahs"));
+  //   const userDocs = snapshot.docs
+  //     .filter(doc => doc.id.startsWith(user.uid))
+  //     .map(doc => {
+  //       const data = doc.data() as UserMemorizedAyah;
+  //       return {
+  //         id: doc.id,
+  //         ...data
+  //       };
+  //     })
+  //     .sort((a, b) => b.memorizedAt.seconds - a.memorizedAt.seconds); // Newest first
+  
+  //   return userDocs.length > 0
+  //     ? {
+  //         surah: userDocs[0].surah,
+  //         ayah: userDocs[0].ayah,
+  //       }
+  //     : null;
+  // };
+
+    useEffect(() => {
+    const loadLastMemorizedAyah = async () => {
+      const user = getAuth().currentUser;
+      if (!user) return;
+
+      const userPrefix = `${user.uid}_`;
+      const snapshot = await getDocs(collection(db, "user_memorized_ayahs"));
+      const userDocs = snapshot.docs.filter(doc => doc.id.startsWith(userPrefix));
+
+      if (userDocs.length === 0) return;
+
+      // Sort by timestamp (latest memorized)
+      userDocs.sort((a, b) => {
+        const aDate = a.data().memorizedAt?.toDate?.() || new Date(0);
+        const bDate = b.data().memorizedAt?.toDate?.() || new Date(0);
+        return bDate - aDate;
+      });
+
+      const lastDoc = userDocs[0];
+      const { surah, ayah } = lastDoc.data();
+
+      setSurahNumber(surah);
+      setAyahNumber(ayah);
     };
-    loadLastMemorized();
-  }, []);
-  
 
-  const getLastMemorizedAyah = async () => {
-    const user = getAuth().currentUser;
-    if (!user) return null;
-  
-    const snapshot = await getDocs(collection(db, "user_memorized_ayahs"));
-    const userDocs = snapshot.docs
-      .filter(doc => doc.id.startsWith(user.uid))
-      .map(doc => {
-        const data = doc.data() as UserMemorizedAyah;
-        return {
-          id: doc.id,
-          ...data
-        };
-      })
-      .sort((a, b) => b.memorizedAt.seconds - a.memorizedAt.seconds); // Newest first
-  
-    return userDocs.length > 0
-      ? {
-          surah: userDocs[0].surah,
-          ayah: userDocs[0].ayah,
-        }
-      : null;
-  };
+    loadLastMemorizedAyah();
+  }, []);
 
   useEffect(() => {
     setSelectedSurah(surahNumber);
@@ -126,19 +157,21 @@ export default function MemorizePage() {
 
   // 2️⃣ Check Memorized Status
   useEffect(() => {
-    const checkMemorizedStatus = async () => {
-      const user = getAuth().currentUser;
-      if (!user) return;
+  const checkMemorizedStatus = async () => {
+    const user = getAuth().currentUser;
+    if (!user) return;
 
-      // const docRef = doc(db, "user_memorized_ayahs", `${userId}_${surahNumber}_${ayahNumber}`);
-      const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
-      const docSnap = await getDoc(docRef);
+    const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
+    const docSnap = await getDoc(docRef);
 
-      setIsMemorized(docSnap.exists());
-    };
+    const memorized = docSnap.exists();
+    setIsMemorized(memorized);
+    setCanGoNext(memorized);
+  };
 
-    checkMemorizedStatus();
-  }, [surahNumber, ayahNumber]);
+  checkMemorizedStatus();
+}, [surahNumber, ayahNumber]);
+
 
 
 useEffect(() => {
@@ -148,7 +181,7 @@ useEffect(() => {
     setAudioUrl(data.audio);  // Assuming the API returns an `audio` property with the URL
   }
   fetchReciterAudio();
-}, [surahNumber, ayahNumber, selectedReciter, audioUrl]);
+}, [surahNumber, ayahNumber, selectedReciter]);
 
   // Handle play/pause
   const togglePlayPause = () => {
@@ -261,28 +294,28 @@ useEffect(() => {
 
   // Mark ayah as memorized
   const markAsMemorized = async () => {
-    try {
-      const user = getAuth().currentUser;
-      if (!user) {
-        alert("Please log in to track memorization.");
-        return;
-      }
-  
-      // const docRef = doc(db, "user_memorized_ayahs", `${userId}_${surahNumber}_${ayahNumber}`);
-      const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
-      await setDoc(docRef, {
-        userId: user.uid,
-        // userId: 123,
-        surah: surahNumber,
-        ayah: ayahNumber,
-        memorizedAt: new Date(),
-      });
-  
-      setIsMemorized(true);
-    } catch (err) {
-      console.error("Failed to mark as memorized:", err);
+  try {
+    const user = getAuth().currentUser;
+    if (!user) {
+      alert("Please log in to track memorization.");
+      return;
     }
-  };
+
+    const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
+    await setDoc(docRef, {
+      userId: user.uid,
+      surah: surahNumber,
+      ayah: ayahNumber,
+      memorizedAt: new Date(),
+    });
+
+    setIsMemorized(true);
+    setCanGoNext(true); // ✅ unlock Next button
+  } catch (err) {
+    console.error("Failed to mark as memorized:", err);
+  }
+};
+
 
   const unmarkAsMemorized = async () => {
     const user = getAuth().currentUser;
@@ -304,6 +337,7 @@ useEffect(() => {
     }
   
     const lastAyahInSurah = ayahCounts.ayah_counts[surahNumber - 1]; // Index is 0-based
+    
     const nextAyah = ayahNumber + 1;
   
     if (nextAyah > lastAyahInSurah) {
@@ -346,33 +380,6 @@ useEffect(() => {
   }
 }, []);
 
-useEffect(() => {
-  const loadLastMemorizedAyah = async () => {
-    const user = getAuth().currentUser;
-    if (!user) return;
-
-    const userPrefix = `${user.uid}_`;
-    const snapshot = await getDocs(collection(db, "user_memorized_ayahs"));
-    const userDocs = snapshot.docs.filter(doc => doc.id.startsWith(userPrefix));
-
-    if (userDocs.length === 0) return;
-
-    // Sort by timestamp (latest memorized)
-    userDocs.sort((a, b) => {
-      const aDate = a.data().memorizedAt?.toDate?.() || new Date(0);
-      const bDate = b.data().memorizedAt?.toDate?.() || new Date(0);
-      return bDate - aDate;
-    });
-
-    const lastDoc = userDocs[0];
-    const { surah, ayah } = lastDoc.data();
-
-    setSurahNumber(surah);
-    setAyahNumber(ayah);
-  };
-
-  loadLastMemorizedAyah();
-}, []);
 
 
 // Sync audio element when playbackRate changes
@@ -402,6 +409,11 @@ const handleContinueFromSelection = () => {
       </header>
 
       <div className="mx-auto max-w-4xl p-4 lg:p-6">
+
+        {/* {!canGoNext && (
+        <p className="text-xs text-muted-foreground mt-2 color-red">Please mark this ayah as memorized to continue.</p>
+      )} */}
+
         {/* Reciter Selection */}
         <div className="flex flex-col mb-4 lg:mb-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -661,7 +673,7 @@ const handleContinueFromSelection = () => {
           />
           <LockedProgressCard
             title="Next Ayah"
-            isLocked={!isMemorized}
+            isLocked={!canGoNext} // 🔒 Disable unless marked
             tooltipMessage="Memorize this ayah to unlock the next one"
             onUnlockedClick={goToNextAyah}
           />
