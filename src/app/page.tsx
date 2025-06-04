@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState} from "react"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -12,7 +12,9 @@ import { getAuth } from "firebase/auth";
 import { db } from "@/firebase"; // adjust path to your firebase config
 import { getDocs, collection, where, query, doc, getDoc } from "firebase/firestore";
 import lastAyahsPerPage from "../../lastAyahsPerPage.json"
+import { useRouter } from 'next/navigation'; // ✅ for App Router
 
+ 
 
 export default function Dashboard() {
   // Dummy data - would come from your backend in a real app
@@ -32,6 +34,11 @@ const [pagesMemorized, setPagesMemorized] = useState(0);
 // const [dailyGoal, setDailyGoal] = useState(5); // e.g., goal is 5 pages/day
 // const [dailyProgress, setDailyProgress] = useState(0); // pages memorized today
 
+const router = useRouter();
+
+  const routeChange = () => {
+    router.push('/memorize'); // 🔁 Change to your target path
+  };
 
   useEffect(() => {
     const fetchMemorizedCount = async () => {
@@ -206,7 +213,7 @@ const [pagesMemorized, setPagesMemorized] = useState(0);
           <p className="text-center text-sm text-muted-foreground lg:text-base">
             You've memorized {totalMemorized} ayahs so far. Keep going!
           </p>
-          <Button className="mt-4 h-12 w-full max-w-xs px-8 text-lg lg:mt-6">Continue Memorizing</Button>
+          <Button onClick={routeChange} className="mt-4 h-12 w-full max-w-xs px-8 text-lg lg:mt-6">Continue Memorizing</Button>
         </div>
 
         <div className="mt-6 lg:mt-8">
