@@ -24,10 +24,10 @@ export function AppSidebar() {
 
   const navItems = [
     { title: "Dashboard", icon: Home, href: "/" },
-    { title: "Memorize", icon: Book, href: "/sandbox" },
+    { title: "Memorize", icon: Book, href: "/memorize" },
     { title: "Test the Hafidh", icon: PencilRulerIcon, href: "/exam" },
     { title: "Settings", icon: Sliders, href: "/settings/memorization" },
-    { title: "Sandbox", icon: Sliders, href: "/memorize" },
+    // { title: "Sandbox", icon: Sliders, href: "/sandbox" },
   ]
 
   const handleNavClick = () => {

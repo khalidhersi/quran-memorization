@@ -17,7 +17,7 @@ export function BottomNav() {
     {
       title: "Memorize",
       icon: Book,
-      href: "/sandbox",
+      href: "/memorize",
     },
     // {
     //   title: "Stats",

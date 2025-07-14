@@ -1,27 +1,45 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { Check, Minus, Pause, Play, Repeat, Rewind, TimerReset, Volume2, VolumeX } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { Play, Pause, Rewind, Repeat, Check, ChevronRight, Volume2, VolumeX, Minus, ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { LockedProgressCard } from "@/components/locked-progress-card"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import { getAyah } from "@/lib/quran-api"
-import ayahCounts from '../../../ayah_counts.json';
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "@/firebase"
-import { getAuth } from "firebase/auth"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Slider } from "@/components/ui/slider"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { SidebarTrigger } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
+import { getAyah } from '../../lib/quran-api';
+import ayahCounts from '../../../ayah_counts.json';
 import { getReciter } from "../../lib/quran-api";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { TimerReset } from "lucide-react";
+import { doc, setDoc, getDoc, deleteDoc, getDocs, collection, Timestamp, limit, orderBy, query, where, serverTimestamp  } from "firebase/firestore";
+import { db } from "@/firebase"; // Adjust path if different
+import { getAuth } from "firebase/auth"; // Optional if user context is elsewhere
+import { LockedProgressCard } from "@/components/locked-progress-card"
 import { PrevProgressCard } from "@/components/prev-progress-card"
-import SignOutButton from "@/components/SignOutButton"
+import { useAuth } from "../context/AuthContext"
 import Header from "@/components/header"
 
-type MemorizedMap = {
-  [surah: number]: number[] // list of ayah numbers memorized in this surah
+type MemorizePage = {
+  surahNumber: number;
+  ayahNumber: number;
+};
+
+interface UserMemorizedAyah {
+  userId: string;
+  user: string
+  surah: number;
+  ayah: number;
+  memorizedAt: Timestamp;
 }
 
 const reciters = [
@@ -32,129 +50,105 @@ const reciters = [
   { id: "abdul_basit", name: "Abdul Basit Abdul Samad" },
 ]
 
-export default function ProgressDemoPage() {
-  const [isMemorized, setIsMemorized] = useState(false)
+
+export default function SandboxPage() {
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isLooping, setIsLooping] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
+  const [volume, setVolume] = useState(80)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [selectedReciter, setSelectedReciter] = useState(reciters[0].id)
+  const [showTranslation, setShowTranslation] = useState(false)
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const [surahNumber, setSurahNumber] = useState(1);
   const [ayahNumber, setAyahNumber] = useState(1);
   const [ayahData, setAyahData] = useState<any>(null);
-  const [showCongrats, setShowCongrats] = useState(false);
-  const [memorized, setMemorized] = useState<MemorizedMap>({});
-  const [percentMemorized, setPercentMemorized] = useState(ayahNumber);
-
-    const [isPlaying, setIsPlaying] = useState(false)
-    const [isLooping, setIsLooping] = useState(false)
-    const [isMuted, setIsMuted] = useState(false)
-    const [volume, setVolume] = useState(80)
-    const [currentTime, setCurrentTime] = useState(0)
-    const [duration, setDuration] = useState(0)
-    const [selectedReciter, setSelectedReciter] = useState(reciters[0].id)
-    const [showTranslation, setShowTranslation] = useState(false)
-    const audioRef = useRef<HTMLAudioElement>(null)
-    const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
-    const [audioUrl, setAudioUrl] = useState('');
-    const [playbackRate, setPlaybackRate] = useState(1);
-    const [canGoNext, setCanGoNext] = useState(false);
+  const [audioUrl, setAudioUrl] = useState('');
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [isMemorized, setIsMemorized] = useState(false);
+  const [canGoNext, setCanGoNext] = useState(false);
+  const { user, loading } = useAuth();
 
 
-  // Replace with real user ID
-  const userId = "user_123";
+  // both ways load latest ayah can be eoieither used
 
-  const syncToFirebase = async (memorized: Record<number, number[]>) => {
-    const user = getAuth().currentUser;
-    if (!user) return null;
-    try {
-      await setDoc(doc(db, "users", user.uid), { memorized }, { merge: true });
-    } catch (err) {
-      console.error("Error writing to Firebase:", err);
+ useEffect(() => {
+  if (loading || !user) return; // ⛔ Don't load until user is ready
+
+  const loadLastMemorized = async () => {
+    const last = await getLastMemorizedAyah(user.uid);
+    if (last) {
+      setSurahNumber(last.surah);
+      setAyahNumber(last.ayah);
     }
   };
-  
 
-  const handleMarkAsMemorized = () => {
-    setIsMemorized(true);
-  
-    setMemorized((prev) => {
-      const updated = { ...prev };
-      if (!updated[surahNumber]) updated[surahNumber] = [];
-      if (!updated[surahNumber].includes(ayahNumber)) {
-        updated[surahNumber].push(ayahNumber);
-        syncToFirebase(updated); // 🔥 Sync to Firestore
-      }
-      return updated;
-    });
-  };
+  loadLastMemorized();
+}, [loading, user]); // ✅ Reacts when auth is ready
 
-    const handleUnmarkAsMemorized = () => {
-      setIsMemorized(false);
 
-      setMemorized((prev) => {
-        const updated = { ...prev };
+const getLastMemorizedAyah = async (uid: string) => {
+  try {
+    const q = query(
+      collection(db, "user_memorized_ayahs"),
+      where("userId", "==", uid),
+      orderBy("memorizedAt", "desc"),
+      limit(1)
+    );
 
-        // Remove the ayah from the list
-        if (updated[surahNumber]) {
-          updated[surahNumber] = updated[surahNumber].filter((ayah) => ayah !== ayahNumber);
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
 
-          // If the list becomes empty, remove the surah key entirely (optional)
-          if (updated[surahNumber].length === 0) {
-            delete updated[surahNumber];
-          }
-
-          syncToFirebase(updated); // 🔥 Sync updated data to Firestore
-        }
-
-        return updated;
-      });
+    const data = snapshot.docs[0].data() as UserMemorizedAyah;
+    return {
+      surah: data.surah,
+      ayah: data.ayah,
     };
+  } catch (err) {
+    console.error("Failed to load last memorized ayah:", err);
+    return null;
+  }
+};
 
 
-  useEffect(() => {
-    const loadMemorizedFromFirebase = async () => {
-      const user = getAuth().currentUser;
-    if (!user) return null;
-      try {
-        const docSnap = await getDoc(doc(db, "users", user.uid));
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.memorized) {
-            setMemorized(data.memorized);
-  
-            const { lastSurah, lastAyah } = getLastMemorizedPosition(data.memorized);
-            setSurahNumber(lastSurah);
-            setAyahNumber(lastAyah);
-          }
-        }
-      } catch (err) {
-        console.error("Error reading from Firebase:", err);
-      }
-    };
-  
-    loadMemorizedFromFirebase();
-  }, []);
-  
-  
-  
-  useEffect(() => {
-    const alreadyMemorized = memorized[surahNumber]?.includes(ayahNumber);
-    setIsMemorized(!!alreadyMemorized);
-  }, [ayahNumber, surahNumber, memorized]);
-  
-  // Load memorized from storage:
-  useEffect(() => {
-    const stored = localStorage.getItem("memorizedAyahs");
-    if (stored) {
-      setMemorized(JSON.parse(stored));
-    }
-  }, []);
+  // both ways load latest ayah can be eoieither used
 
-  // Save to storage whenever memorized updates:
-  useEffect(() => {
-    localStorage.setItem("memorizedAyahs", JSON.stringify(memorized));
-  }, [memorized]);
+  //   useEffect(() => {
+  //   const loadLastMemorizedAyah = async () => {
+  //     const user = getAuth().currentUser;
+  //     if (!user) return;
+
+  //     const userPrefix = `${user.uid}_`;
+  //     const snapshot = await getDocs(collection(db, "user_memorized_ayahs"));
+  //     const userDocs = snapshot.docs.filter(doc => doc.id.startsWith(userPrefix));
+
+  //     if (userDocs.length === 0) return;
+
+  //     // Sort by timestamp (latest memorized)
+  //     userDocs.sort((a, b) => {
+  //       const aDate = a.data().memorizedAt?.toDate?.() || new Date(0);
+  //       const bDate = b.data().memorizedAt?.toDate?.() || new Date(0);
+  //       return bDate - aDate;
+  //     });
+
+  //     const lastDoc = userDocs[0];
+  //     const { surah, ayah } = lastDoc.data();
+
+  //     setSurahNumber(surah);
+  //     setAyahNumber(ayah);
+  //   };
+
+  //   loadLastMemorizedAyah();
+  // }, []);
 
   useEffect(() => {
-    setPercentMemorized(((ayahNumber ) / ayahCounts.ayah_counts[surahNumber - 1]) * 100)
-  }, [ayahNumber]);
-
+    setSelectedSurah(surahNumber);
+    setSelectedAyah(ayahNumber);
+  }, [surahNumber, ayahNumber]);
+  
+  // 1️⃣ Fetch Ayah Data
   useEffect(() => {
     async function fetchAyah() {
       const data = await getAyah(surahNumber, ayahNumber);
@@ -169,17 +163,203 @@ export default function ProgressDemoPage() {
     fetchAyah();
   }, [surahNumber, ayahNumber]);
 
+  // 2️⃣ Check Memorized Status
+  useEffect(() => {
+  const checkMemorizedStatus = async () => {
+    const user = getAuth().currentUser;
+    if (!user) return;
+
+    const docRef = doc(db, "user_memorized_ayahs", `${user.uid}_${surahNumber}_${ayahNumber}`);
+    const docSnap = await getDoc(docRef);
+
+  setIsMemorized(docSnap.exists());
+    };
+     
+  
+  checkMemorizedStatus();
+}, [surahNumber, ayahNumber]);
+
+
+
+useEffect(() => {
+  async function fetchReciterAudio() {
+    const data = await getReciter(surahNumber, ayahNumber, "ar.alafasy");
+    console.log(data.audio);  // Assuming the API returns an `audio` property with the URL
+    setAudioUrl(data.audio);  // Assuming the API returns an `audio` property with the URL
+  }
+  fetchReciterAudio();
+}, [surahNumber, ayahNumber, selectedReciter]);
+
+  // Handle play/pause
+  const togglePlayPause = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause()
+      } else {
+        audioRef.current.play()
+      }
+      setIsPlaying(!isPlaying)
+    }
+  }
+
+  // Handle rewind 5 seconds
+  const rewindFiveSeconds = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 5)
+      setCurrentTime(audioRef.current.currentTime)
+    }
+  }
+
+  // Handle loop toggle
+  const toggleLoop = () => {
+    if (audioRef.current) {
+      audioRef.current.loop = !isLooping
+      setIsLooping(!isLooping)
+    }
+  }
+
+  // Handle volume change
+  const handleVolumeChange = (value: number[]) => {
+    const newVolume = value[0]
+    setVolume(newVolume)
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume / 100
+    }
+  }
+
+  // Handle mute toggle
+  const toggleMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted
+      setIsMuted(!isMuted)
+    }
+  }
+
+  // Update progress bar
+  useEffect(() => {
+    if (isPlaying) {
+      progressIntervalRef.current = setInterval(() => {
+        if (audioRef.current) {
+          setCurrentTime(audioRef.current.currentTime)
+        }
+      }, 100)
+    } else if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current)
+    }
+
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current)
+      }
+    }
+  }, [isPlaying])
+
+  // Set up audio element
+  useEffect(() => {
+    const audio = audioRef.current
+
+    if (audio) {
+      // Set initial volume
+      audio.volume = volume / 100
+
+      // Event listeners
+      const handleLoadedMetadata = () => {
+        setDuration(audio.duration)
+      }
+
+      const handleEnded = () => {
+        if (!isLooping) {
+          setIsPlaying(false)
+        }
+      }
+
+      audio.addEventListener("loadedmetadata", handleLoadedMetadata)
+      audio.addEventListener("ended", handleEnded)
+
+      return () => {
+        audio.removeEventListener("loadedmetadata", handleLoadedMetadata)
+        audio.removeEventListener("ended", handleEnded)
+      }
+    }
+  }, [isLooping, volume])
+
+  // Format time (seconds) to MM:SS
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60)
+    const seconds = Math.floor(time % 60)
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`
+  }
+
+  // Handle progress bar click
+  const handleProgressChange = (value: number[]) => {
+    const newTime = value[0]
+    setCurrentTime(newTime)
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime
+    }
+  }
+
+  // Mark ayah as memorized
+const markAsMemorized = async () => {
+  if (loading) return; // ✅ auth still loading
+  if (!user) {
+    alert("Please log in to track memorization.");
+    return;
+  }
+
+  try {
+    const docRef = doc(
+      db,
+      "user_memorized_ayahs",
+      `${user.uid}_${surahNumber}_${ayahNumber}`
+    );
+    await setDoc(docRef, {
+      userId: user.uid,
+      surah: surahNumber,
+      ayah: ayahNumber,
+      memorizedAt: serverTimestamp(),
+    });
+
+    setIsMemorized(true);
+  } catch (err) {
+    console.error("Failed to mark as memorized:", err);
+  }
+};
+
+
+  const unmarkAsMemorized = async () => {
+  if (loading) return; // ⏳ Wait for auth to finish
+  if (!user) return; // 🚫 No user logged in
+
+  try {
+    const docRef = doc(
+      db,
+      "user_memorized_ayahs",
+      `${user.uid}_${surahNumber}_${ayahNumber}`
+    );
+
+    await deleteDoc(docRef);
+
+    setIsMemorized(false);
+  } catch (err) {
+    console.error("🔥 Failed to unmark memorization:", err);
+    alert("Something went wrong while unmarking. Please try again.");
+  }
+};
+
   const goToNextAyah = () => {
     setIsMemorized(false);
-    
-    const lastAyahInSurah = ayahCounts.ayah_counts[surahNumber - 1]; // Index is 0-based
-    const nextAyah = ayahNumber + 1;
-
-    if (ayahNumber === lastAyahInSurah) {
-      // Surah completed
-      setShowCongrats(true);
-      return;
+    setIsPlaying(false);
+    setCurrentTime(0);
+  
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
+  
+    const lastAyahInSurah = ayahCounts.ayah_counts[surahNumber - 1]; // Index is 0-based
+    
+    const nextAyah = ayahNumber + 1;
   
     if (nextAyah > lastAyahInSurah) {
       const nextSurah = surahNumber === 114 ? 1 : surahNumber + 1;
@@ -189,7 +369,7 @@ export default function ProgressDemoPage() {
       setAyahNumber(nextAyah);
     }
   };
-
+  
   const goToPreviousAyah = () => {
     setIsMemorized(false);
     setIsPlaying(false);
@@ -209,142 +389,6 @@ export default function ProgressDemoPage() {
       setAyahNumber(ayahNumber - 1);
     }
   };
-
-  const getLastMemorizedPosition = (memorized: MemorizedMap) => {
-    let lastSurah = 1;
-    let lastAyah = 1;
-  
-    for (const [surah, ayahs] of Object.entries(memorized)) {
-      const surahNum = parseInt(surah);
-      if (ayahs.length > 0) {
-        if (surahNum > lastSurah || (surahNum === lastSurah && Math.max(...ayahs) > lastAyah)) {
-          lastSurah = surahNum;
-          lastAyah = Math.max(...ayahs);
-        }
-      }
-    }
-  
-    return { lastSurah, lastAyah };
-  };
-
-  useEffect(() => {
-    async function fetchReciterAudio() {
-      const data = await getReciter(surahNumber, ayahNumber, "ar.alafasy");
-      console.log(data.audio);  // Assuming the API returns an `audio` property with the URL
-      setAudioUrl(data.audio);  // Assuming the API returns an `audio` property with the URL
-    }
-    fetchReciterAudio();
-  }, [surahNumber, ayahNumber, selectedReciter]);
-  
-    // Handle play/pause
-    const togglePlayPause = () => {
-      if (audioRef.current) {
-        if (isPlaying) {
-          audioRef.current.pause()
-        } else {
-          audioRef.current.play()
-        }
-        setIsPlaying(!isPlaying)
-      }
-    }
-  
-    // Handle rewind 5 seconds
-    const rewindFiveSeconds = () => {
-      if (audioRef.current) {
-        audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 5)
-        setCurrentTime(audioRef.current.currentTime)
-      }
-    }
-  
-    // Handle loop toggle
-    const toggleLoop = () => {
-      if (audioRef.current) {
-        audioRef.current.loop = !isLooping
-        setIsLooping(!isLooping)
-      }
-    }
-  
-    // Handle volume change
-    const handleVolumeChange = (value: number[]) => {
-      const newVolume = value[0]
-      setVolume(newVolume)
-      if (audioRef.current) {
-        audioRef.current.volume = newVolume / 100
-      }
-    }
-  
-    // Handle mute toggle
-    const toggleMute = () => {
-      if (audioRef.current) {
-        audioRef.current.muted = !isMuted
-        setIsMuted(!isMuted)
-      }
-    }
-  
-    // Update progress bar
-    useEffect(() => {
-      if (isPlaying) {
-        progressIntervalRef.current = setInterval(() => {
-          if (audioRef.current) {
-            setCurrentTime(audioRef.current.currentTime)
-          }
-        }, 100)
-      } else if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current)
-      }
-  
-      return () => {
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current)
-        }
-      }
-    }, [isPlaying])
-  
-    // Set up audio element
-    useEffect(() => {
-      const audio = audioRef.current
-  
-      if (audio) {
-        // Set initial volume
-        audio.volume = volume / 100
-  
-        // Event listeners
-        const handleLoadedMetadata = () => {
-          setDuration(audio.duration)
-        }
-  
-        const handleEnded = () => {
-          if (!isLooping) {
-            setIsPlaying(false)
-          }
-        }
-  
-        audio.addEventListener("loadedmetadata", handleLoadedMetadata)
-        audio.addEventListener("ended", handleEnded)
-  
-        return () => {
-          audio.removeEventListener("loadedmetadata", handleLoadedMetadata)
-          audio.removeEventListener("ended", handleEnded)
-        }
-      }
-    }, [isLooping, volume])
-  
-    // Format time (seconds) to MM:SS
-    const formatTime = (time: number) => {
-      const minutes = Math.floor(time / 60)
-      const seconds = Math.floor(time % 60)
-      return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`
-    }
-  
-    // Handle progress bar click
-    const handleProgressChange = (value: number[]) => {
-      const newTime = value[0]
-      setCurrentTime(newTime)
-      if (audioRef.current) {
-        audioRef.current.currentTime = newTime
-      }
-    }
-  
   
 // Load default from localStorage on first render
 useEffect(() => {
@@ -378,44 +422,23 @@ const handleContinueFromSelection = () => {
 };
 
 
-  
-
   return (
-    <div className="bg-background min-h-screen w-full max-w-full overflow-x-hidden px-2 sm:px-4">
-      <Header title={"Memorize Ayah by Ayah"} />
+    <div className="bg-background">
+      <Header title={"Memorize Quran"} />
 
-      {showCongrats && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
-        <div className="text-center p-8 bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-md mx-auto">
-          <h1 className="text-3xl font-bold text-emerald-600 mb-4">🎉 Congratulations!</h1>
-          <p className="text-lg text-gray-700 dark:text-gray-300 mb-6">
-            You’ve completed Surah {ayahData?.surah}!
-          </p>
-          <Button
-            onClick={() => {
-              setShowCongrats(false);
-              const nextSurah = surahNumber === 114 ? 1 : surahNumber + 1;
-              setSurahNumber(nextSurah);
-              setAyahNumber(1);
-            }}
-          >
-            Continue to next Surah
-          </Button>
-        </div>
-      </div>
-    )}
+      <div className="mx-auto max-w-4xl p-4 lg:p-6">
 
-
-
-
-      <div className="mx-auto w-full max-w-4xl p-4 lg:p-6  overflow-x-hidden">
-
-
+        {/* {!canGoNext && (
+        <p className="text-xs text-muted-foreground mt-2 color-red">Please mark this ayah as memorized to continue.</p>
+      )} */}
 
         {/* Reciter Selection */}
-        <div className="flex flex-wrap  justify-center mb-4 sm:mb-3">
-          <div className="flex flex-wrap  flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex flex-col mb-4 lg:mb-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-lg font-semibold lg:text-xl">
+            {ayahData ? `${ayahData.surah} (${ayahData.number})` : "Loading..."}
+            </h2>
+            <div className="flex items-center gap-2">
               <label className="flex items-center gap-2">
                 <span>Surah:</span>
                 <select
@@ -452,7 +475,7 @@ const handleContinueFromSelection = () => {
 
               <button
                 onClick={handleContinueFromSelection}
-                className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-xs sm:text-sm"
+                className="bg-green-600 text-white px-2 py-0.5 m- rounded hover:bg-green-700 text-xs shrink"
               >
                 Continue
               </button>
@@ -461,7 +484,7 @@ const handleContinueFromSelection = () => {
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Reciter:</span>
               <Select value={selectedReciter} onValueChange={setSelectedReciter}>
-                <SelectTrigger className="w-full lg:max-w-[250px]">
+                <SelectTrigger className="w-[180px] lg:w-[200px]">
                   <SelectValue placeholder="Select reciter" />
                 </SelectTrigger>
                 <SelectContent>
@@ -476,43 +499,44 @@ const handleContinueFromSelection = () => {
           </div>
         </div>
 
-       {/* Progress Indicator */}
-    
-         <div className="flex mt-1 ">
-          <h3 className="mb-2s">Progress: {Math.round(percentMemorized)}%</h3>
-          </div>
-
-          <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        {/* Ayah Display */}
+        <Card className="mb-4 lg:mb-6">
+          <CardContent className="p-4 lg:p-6">
+            {/* Arabic Text */}
             <div
-              className="h-full bg-emerald-500 transition-all duration-300"
-              style={{
-                width: `${(ayahNumber / ayahCounts.ayah_counts[surahNumber - 1]) * 100}%`,
-              }}
-            />
-          </div>
-          <div className="flex justify-between mt-1 text-right text-xs text-gray-500">
-           <p> Memoried</p>
-           <p> {ayahNumber} of {ayahCounts.ayah_counts[surahNumber - 1]} ayahs memorized</p>
-          </div>
-          <div className="mt-1 text-right text-xs text-gray-500">
-          </div>
-       
-
-        {/* Current Ayah Card */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <h2 className="mb-2 text-xl font-semibold">
-              {ayahData ? `${ayahData.surah} ${ayahData.number}/${ayahCounts.ayah_counts[surahNumber - 1]}` : "Loading..."}
-            </h2>
-            <p
-              className="font-arabic leading-snug text-[clamp(1.25rem,4vw,2rem)] p-3 text-center"
+              className=" leading-snug text-[clamp(2rem,3vw,2rem)] p-3 text-center"
               dir="rtl"
               lang="ar"
             >
               {ayahData?.arabic || "Loading..."}
-            </p>
+            </div>
 
+            <Separator className="my-3 lg:my-4" />
 
+            {/* Translation Toggle for Mobile */}
+            <div className="mb-3 flex items-center justify-between lg:hidden">
+              <Label htmlFor="show-translation" className="text-sm font-medium">
+                Show Translation
+              </Label>
+              <Switch id="show-translation" checked={showTranslation} onCheckedChange={setShowTranslation} />
+            </div>
+
+            {/* Translation */}
+            <div
+              className={cn(
+                "text-sm leading-relaxed text-muted-foreground lg:text-base",
+                !showTranslation && "hidden lg:block",
+              )}
+            >
+              {/* needs to be dynaimic  */}
+              {ayahData?.translation || "Loading..."}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Audio Player */}
+        <Card className="mb-4 lg:mb-6">
+          <CardContent className="p-4 lg:p-6">
           {audioUrl ? (
            <audio ref={audioRef} src={audioUrl} loop onLoadedMetadata={() => {
             if (audioRef.current) {
@@ -524,7 +548,7 @@ const handleContinueFromSelection = () => {
         )}
 
             {/* Progress Bar */}
-            <div className="mb-2 w-full">
+            <div className="mb-2">
               <Slider
                 value={[currentTime]}
                 min={0}
@@ -540,9 +564,8 @@ const handleContinueFromSelection = () => {
             </div>
 
             {/* Controls */}
-            <div className="flex flex-col sm:flex-row sm:justify-between items-stretch gap-3 w-full">
-              {/* Play, Rewind, Loop, Speed */}
-              <div className="flex flex-wrap justify-center gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="icon"
@@ -579,7 +602,7 @@ const handleContinueFromSelection = () => {
                       variant="outline"
                       size="icon"
                       aria-label="Playback speed"
-                      className="h-10 w-10 sm:h-9 sm:w-9"
+                      className="h-10 w-10 lg:h-9 lg:w-9"
                     >
                       <TimerReset className="h-4 w-4" />
                     </Button>
@@ -589,17 +612,20 @@ const handleContinueFromSelection = () => {
                       <DropdownMenuItem
                         key={rate}
                         onClick={() => setPlaybackRate(rate)}
-                        className={cn("cursor-pointer", playbackRate === rate && "font-bold text-emerald-600")}
+                        className={cn(
+                          "cursor-pointer",
+                          playbackRate === rate && "font-bold text-emerald-600"
+                        )}
                       >
                         {rate}x
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
+
               </div>
 
-              {/* Mute + Volume */}
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -616,47 +642,56 @@ const handleContinueFromSelection = () => {
                   max={100}
                   step={1}
                   onValueChange={handleVolumeChange}
-                  className="w-full sm:w-28 md:w-32 "
+                  className="w-20 lg:w-24"
                 />
               </div>
             </div>
-
-
-
-            <div className="flex flex-col justify-between mt-6 sm:flex-row">
-              <Button
-                onClick={handleMarkAsMemorized}
-                disabled={isMemorized}
-                className="flex items-center gap-2 text-sm sm:text-base"
-                variant={isMemorized ? "outline" : "default"}
-              >
-                <Check className="h-4 w-4" />
-                {isMemorized ? "Memorized" : "Mark as Memorized"}
-              </Button>
-
-              {isMemorized && 
-               <Button
-                onClick={handleUnmarkAsMemorized}
-                className="flex items-center gap-2 text-sm sm:text-base bg-red-600 hover:bg-red-600/80 text-white-100"
-                >
-                <Minus className="h-4 w-4" />
-                {isMemorized ? "Unmark as Memorized" : "Unmark as Memorized"}
-              </Button>}
-            </div>
-            
           </CardContent>
         </Card>
-        
+
+        {/* Memorization Controls */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <PrevProgressCard
-              title="Previous Ayah"
-              tooltipMessage="Memorize this ayah to unlock the next one"
-              onUnlockedClick={goToPreviousAyah} isLocked={false}        
-            />
-          {/* Next Ayah Card (Locked until current is memorized) */}
+          <Button
+            onClick={markAsMemorized}
+            disabled={isMemorized}
+            className={cn(
+              "flex h-12 items-center justify-center gap-2",
+              isMemorized ? "bg-emerald-600 hover:bg-emerald-600" : "",
+            )}
+          >
+            <Check className="h-4 w-4" />
+            Marked as Memorized
+          </Button>
+
+          <Button
+            onClick={unmarkAsMemorized}
+            disabled={!isMemorized}
+            className={cn(
+              "flex h-12 items-center justify-center gap-2",
+              isMemorized ? "bg-red-600 hover:bg-red-600/80 text-white-100" : "",
+            )}
+          >
+            <Minus className="h-4 w-4" />
+            Not Memorized
+          </Button>
+
+          {/* <Button
+            onClick={goToPreviousAyah}
+            className="flex h-12 items-center justify-center gap-2"
+          >
+          <ChevronLeft className="h-4 w-4" />
+            Previous Ayah
+          </Button>
+         */}
+
+         <PrevProgressCard
+            title="Previous Ayah"
+            tooltipMessage="Memorize this ayah to unlock the next one"
+            onUnlockedClick={goToPreviousAyah} isLocked={false}        
+          />
           <LockedProgressCard
             title="Next Ayah"
-            isLocked={!isMemorized}
+            isLocked={!isMemorized} // 🔒 Disable unless marked
             tooltipMessage="Memorize this ayah to unlock the next one"
             onUnlockedClick={goToNextAyah}
           />
