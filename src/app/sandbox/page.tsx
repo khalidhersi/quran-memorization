@@ -644,19 +644,20 @@ const handleContinueFromSelection = () => {
           </CardContent>
         </Card>
         
-
-        {/* Next Ayah Card (Locked until current is memorized) */}
-        <LockedProgressCard
-          title="Next Ayah"
-          isLocked={!isMemorized}
-          tooltipMessage="Memorize this ayah to unlock the next one"
-          onUnlockedClick={goToNextAyah}
-        />
-<PrevProgressCard
-            title="Previous Ayah"
+        <div className="flex justify-between mt-6">
+          <PrevProgressCard
+              title="Previous Ayah"
+              tooltipMessage="Memorize this ayah to unlock the next one"
+              onUnlockedClick={goToPreviousAyah} isLocked={false}        
+            />
+          {/* Next Ayah Card (Locked until current is memorized) */}
+          <LockedProgressCard
+            title="Next Ayah"
+            isLocked={!isMemorized}
             tooltipMessage="Memorize this ayah to unlock the next one"
-            onUnlockedClick={goToPreviousAyah} isLocked={false}        
+            onUnlockedClick={goToNextAyah}
           />
+        </div>
       </div>
     </div>
   )
