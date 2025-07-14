@@ -21,7 +21,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { TimerReset } from "lucide-react";
-import { doc, setDoc, getDoc, deleteDoc, getDocs, collection, Timestamp  } from "firebase/firestore";
+import { doc, setDoc, getDoc, deleteDoc, getDocs, collection, Timestamp, limit, orderBy, query, where, serverTimestamp  } from "firebase/firestore";
 import { db } from "@/firebase"; // Adjust path if different
 import { getAuth } from "firebase/auth"; // Optional if user context is elsewhere
 import { LockedProgressCard } from "@/components/locked-progress-card"
@@ -73,41 +73,44 @@ export default function MemorizePage() {
 
   // both ways load latest ayah can be eoieither used
 
-  useEffect(() => {
-    const loadLastMemorized = async () => {
-      const last = await getLastMemorizedAyah();
-      if (last) {
-        setSurahNumber(last.surah);
-        setAyahNumber(last.ayah);
-      }
-    };
-    loadLastMemorized();
-  }, []);
-  
+ useEffect(() => {
+  if (loading || !user) return; // ⛔ Don't load until user is ready
 
-  const getLastMemorizedAyah = async () => {
-    const user = getAuth().currentUser;
-    if (!user) return null;
-  
-    const snapshot = await getDocs(collection(db, "user_memorized_ayahs"));
-    const userDocs = snapshot.docs
-      .filter(doc => doc.id.startsWith(user.uid))
-      .map(doc => {
-        const data = doc.data() as UserMemorizedAyah;
-        return {
-          id: doc.id,
-          ...data
-        };
-      })
-      .sort((a, b) => b.memorizedAt.seconds - a.memorizedAt.seconds); // Newest first
-  
-    return userDocs.length > 0
-      ? {
-          surah: userDocs[0].surah,
-          ayah: userDocs[0].ayah,
-        }
-      : null;
+  const loadLastMemorized = async () => {
+    const last = await getLastMemorizedAyah(user.uid);
+    if (last) {
+      setSurahNumber(last.surah);
+      setAyahNumber(last.ayah);
+    }
   };
+
+  loadLastMemorized();
+}, [loading, user]); // ✅ Reacts when auth is ready
+
+
+const getLastMemorizedAyah = async (uid: string) => {
+  try {
+    const q = query(
+      collection(db, "user_memorized_ayahs"),
+      where("userId", "==", uid),
+      orderBy("memorizedAt", "desc"),
+      limit(1)
+    );
+
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+
+    const data = snapshot.docs[0].data() as UserMemorizedAyah;
+    return {
+      surah: data.surah,
+      ayah: data.ayah,
+    };
+  } catch (err) {
+    console.error("Failed to load last memorized ayah:", err);
+    return null;
+  }
+};
+
 
   // both ways load latest ayah can be eoieither used
 
@@ -313,7 +316,7 @@ const markAsMemorized = async () => {
       userId: user.uid,
       surah: surahNumber,
       ayah: ayahNumber,
-      memorizedAt: new Date(),
+      memorizedAt: serverTimestamp(),
     });
 
     setIsMemorized(true);
