@@ -182,7 +182,7 @@ export default function ExamPage() {
       </div>
     )}
 
-      <div className="container mx-auto max-w-2xl py-8">
+      <div className="mx-auto max-w-4xl p-4 lg:p-6">
         {/* Current Ayah Card */}
         <Card className="mb-6">
           <CardContent className="p-6">

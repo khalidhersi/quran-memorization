@@ -409,12 +409,13 @@ const handleContinueFromSelection = () => {
 
 
 
-      <div className="container mx-auto max-w-2xl py-8">
+      <div className="mx-auto max-w-4xl p-4 lg:p-6">
+
 
         {/* Reciter Selection */}
-        <div className="flex flex-col mb-4 lg:mb-3">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
+        <div className="flex justify-center mb-4 lg:mb-3">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex gap-2 items-center justify-between">
               <label className="flex items-center gap-2">
                 <span>Surah:</span>
                 <select
@@ -451,7 +452,7 @@ const handleContinueFromSelection = () => {
 
               <button
                 onClick={handleContinueFromSelection}
-                className="bg-green-600 text-white px-2 py-0.5 m- rounded hover:bg-green-700 text-xs shrink"
+                className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-xs sm:text-sm"
               >
                 Continue
               </button>
@@ -500,9 +501,11 @@ const handleContinueFromSelection = () => {
         {/* Current Ayah Card */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <h2 className="mb-2 text-xl font-semibold">{ayahData ? `${ayahData.surah} ${ayahData.number}/${ayahCounts.ayah_counts[surahNumber - 1]}` : "Loading..."}</h2>
+            <h2 className="mb-2 text-xl font-semibold">
+              {ayahData ? `${ayahData.surah} ${ayahData.number}/${ayahCounts.ayah_counts[surahNumber - 1]}` : "Loading..."}
+            </h2>
             <p
-              className="font-arabic leading-snug text-[clamp(1rem,3vw,2rem)] p-3 text-center"
+              className="font-arabic leading-snug text-[clamp(1.25rem,4vw,2rem)] p-3 text-center"
               dir="rtl"
               lang="ar"
             >
@@ -537,7 +540,7 @@ const handleContinueFromSelection = () => {
             </div>
 
             {/* Controls */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap justify-center sm:justify-between items-center gap-2">
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -575,7 +578,7 @@ const handleContinueFromSelection = () => {
                       variant="outline"
                       size="icon"
                       aria-label="Playback speed"
-                      className="h-10 w-10 lg:h-9 lg:w-9"
+                      className="h-10 w-10 sm:h-9 sm:w-9"
                     >
                       <TimerReset className="h-4 w-4" />
                     </Button>
@@ -615,7 +618,7 @@ const handleContinueFromSelection = () => {
                   max={100}
                   step={1}
                   onValueChange={handleVolumeChange}
-                  className="w-20 lg:w-24"
+                  className="w-24 sm:w-28 md:w-32"
                 />
               </div>
             </div>
@@ -625,7 +628,7 @@ const handleContinueFromSelection = () => {
               <Button
                 onClick={handleMarkAsMemorized}
                 disabled={isMemorized}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-sm sm:text-base"
                 variant={isMemorized ? "outline" : "default"}
               >
                 <Check className="h-4 w-4" />
@@ -634,7 +637,7 @@ const handleContinueFromSelection = () => {
 
                {isMemorized && <Button
                 onClick={handleUnmarkAsMemorized}
-                className="flex items-center gap-2 bg-red-600 hover:bg-red-600/80 text-white-100"
+                className="flex items-center gap-2 text-sm sm:text-base bg-red-600 hover:bg-red-600/80 text-white-100"
               >
                 <Minus className="h-4 w-4" />
                 {isMemorized ? "Unmark as Memorized" : "Unmark as Memorized"}
@@ -644,7 +647,7 @@ const handleContinueFromSelection = () => {
           </CardContent>
         </Card>
         
-        <div className="flex justify-between mt-6">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <PrevProgressCard
               title="Previous Ayah"
               tooltipMessage="Memorize this ayah to unlock the next one"
