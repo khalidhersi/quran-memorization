@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Check } from "lucide-react"
+import { Check, Pause, Play, Repeat, Rewind, TimerReset, Volume2, VolumeX } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { LockedProgressCard } from "@/components/locked-progress-card"
@@ -12,6 +12,10 @@ import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase"
 import { getAuth } from "firebase/auth"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { Slider } from "@/components/ui/slider"
+import { getReciter } from "../../lib/quran-api";
 
 type MemorizedMap = {
   [surah: number]: number[] // list of ayah numbers memorized in this surah
@@ -177,6 +181,124 @@ export default function ProgressDemoPage() {
     return { lastSurah, lastAyah };
   };
 
+  useEffect(() => {
+    async function fetchReciterAudio() {
+      const data = await getReciter(surahNumber, ayahNumber, "ar.alafasy");
+      console.log(data.audio);  // Assuming the API returns an `audio` property with the URL
+      setAudioUrl(data.audio);  // Assuming the API returns an `audio` property with the URL
+    }
+    fetchReciterAudio();
+  }, [surahNumber, ayahNumber, selectedReciter]);
+  
+    // Handle play/pause
+    const togglePlayPause = () => {
+      if (audioRef.current) {
+        if (isPlaying) {
+          audioRef.current.pause()
+        } else {
+          audioRef.current.play()
+        }
+        setIsPlaying(!isPlaying)
+      }
+    }
+  
+    // Handle rewind 5 seconds
+    const rewindFiveSeconds = () => {
+      if (audioRef.current) {
+        audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 5)
+        setCurrentTime(audioRef.current.currentTime)
+      }
+    }
+  
+    // Handle loop toggle
+    const toggleLoop = () => {
+      if (audioRef.current) {
+        audioRef.current.loop = !isLooping
+        setIsLooping(!isLooping)
+      }
+    }
+  
+    // Handle volume change
+    const handleVolumeChange = (value: number[]) => {
+      const newVolume = value[0]
+      setVolume(newVolume)
+      if (audioRef.current) {
+        audioRef.current.volume = newVolume / 100
+      }
+    }
+  
+    // Handle mute toggle
+    const toggleMute = () => {
+      if (audioRef.current) {
+        audioRef.current.muted = !isMuted
+        setIsMuted(!isMuted)
+      }
+    }
+  
+    // Update progress bar
+    useEffect(() => {
+      if (isPlaying) {
+        progressIntervalRef.current = setInterval(() => {
+          if (audioRef.current) {
+            setCurrentTime(audioRef.current.currentTime)
+          }
+        }, 100)
+      } else if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current)
+      }
+  
+      return () => {
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current)
+        }
+      }
+    }, [isPlaying])
+  
+    // Set up audio element
+    useEffect(() => {
+      const audio = audioRef.current
+  
+      if (audio) {
+        // Set initial volume
+        audio.volume = volume / 100
+  
+        // Event listeners
+        const handleLoadedMetadata = () => {
+          setDuration(audio.duration)
+        }
+  
+        const handleEnded = () => {
+          if (!isLooping) {
+            setIsPlaying(false)
+          }
+        }
+  
+        audio.addEventListener("loadedmetadata", handleLoadedMetadata)
+        audio.addEventListener("ended", handleEnded)
+  
+        return () => {
+          audio.removeEventListener("loadedmetadata", handleLoadedMetadata)
+          audio.removeEventListener("ended", handleEnded)
+        }
+      }
+    }, [isLooping, volume])
+  
+    // Format time (seconds) to MM:SS
+    const formatTime = (time: number) => {
+      const minutes = Math.floor(time / 60)
+      const seconds = Math.floor(time % 60)
+      return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`
+    }
+  
+    // Handle progress bar click
+    const handleProgressChange = (value: number[]) => {
+      const newTime = value[0]
+      setCurrentTime(newTime)
+      if (audioRef.current) {
+        audioRef.current.currentTime = newTime
+      }
+    }
+  
   
 // Load default from localStorage on first render
 useEffect(() => {
@@ -208,6 +330,7 @@ const handleContinueFromSelection = () => {
   setSurahNumber(selectedSurah);
   setAyahNumber(selectedAyah);
 };
+
 
   
 
@@ -318,9 +441,118 @@ const handleContinueFromSelection = () => {
             >
               {ayahData?.arabic || "Loading..."}
             </p>
-            <p className="text-gray-600 dark:text-gray-400">
-              {ayahData?.translation || "Loading..."}
-            </p>
+
+
+          {audioUrl ? (
+           <audio ref={audioRef} src={audioUrl} loop onLoadedMetadata={() => {
+            if (audioRef.current) {
+              audioRef.current.playbackRate = playbackRate;
+            }
+          }} />
+          ) : (
+          <p>Loading audio...</p>
+        )}
+
+            {/* Progress Bar */}
+            <div className="mb-2">
+              <Slider
+                value={[currentTime]}
+                min={0}
+                max={duration || 100}
+                step={0.1}
+                onValueChange={handleProgressChange}
+                className="cursor-pointer"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={togglePlayPause}
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                  className="h-10 w-10 lg:h-9 lg:w-9"
+                >
+                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={rewindFiveSeconds}
+                  aria-label="Rewind 5 seconds"
+                  className="h-10 w-10 lg:h-9 lg:w-9"
+                >
+                  <Rewind className="h-4 w-4" />
+                </Button>
+
+                <Button
+                  variant={isLooping ? "default" : "outline"}
+                  size="icon"
+                  onClick={toggleLoop}
+                  aria-label={isLooping ? "Disable loop" : "Enable loop"}
+                  className={cn("h-10 w-10 lg:h-9 lg:w-9", isLooping ? "bg-emerald-600 hover:bg-emerald-700" : "")}
+                >
+                  <Repeat className="h-4 w-4" />
+                </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-label="Playback speed"
+                      className="h-10 w-10 lg:h-9 lg:w-9"
+                    >
+                      <TimerReset className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="top">
+                    {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
+                      <DropdownMenuItem
+                        key={rate}
+                        onClick={() => setPlaybackRate(rate)}
+                        className={cn(
+                          "cursor-pointer",
+                          playbackRate === rate && "font-bold text-emerald-600"
+                        )}
+                      >
+                        {rate}x
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleMute}
+                  aria-label={isMuted ? "Unmute" : "Mute"}
+                  className="h-10 w-10 lg:h-9 lg:w-9"
+                >
+                  {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                </Button>
+
+                <Slider
+                  value={[volume]}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onValueChange={handleVolumeChange}
+                  className="w-20 lg:w-24"
+                />
+              </div>
+            </div>
+
 
             <div className="mt-6">
               <Button
@@ -335,6 +567,7 @@ const handleContinueFromSelection = () => {
             </div>
           </CardContent>
         </Card>
+        
 
         {/* Next Ayah Card (Locked until current is memorized) */}
         <LockedProgressCard
