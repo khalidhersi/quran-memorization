@@ -16,7 +16,7 @@ type MemorizedMap = {
   [surah: number]: number[] // list of ayah numbers memorized in this surah
 }
 
-export default function ProgressDemoPage() {
+export default function ExamPage() {
   const [isMemorized, setIsMemorized] = useState(false)
   const [surahNumber, setSurahNumber] = useState(1);
   const [ayahNumber, setAyahNumber] = useState(1);

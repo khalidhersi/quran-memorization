@@ -17,14 +17,14 @@ export function BottomNav() {
     {
       title: "Memorize",
       icon: Book,
-      href: "/memorize",
+      href: "/sandbox",
     },
     // {
     //   title: "Stats",
     //   icon: BarChart,
     //   href: "/progress-stats",
     // },
-    { title: "Test the Hafidh", icon: PencilRulerIcon, href: "/progress-demo" },
+    { title: "Test the Hafidh", icon: PencilRulerIcon, href: "/exam" },
     {
       title: "Settings",
       icon: Settings,
