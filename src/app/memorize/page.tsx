@@ -40,34 +40,36 @@ export default function MemorizePage() {
   const [showCongrats, setShowCongrats] = useState(false);
   const [memorized, setMemorized] = useState<MemorizedMap>({});
   const [percentMemorized, setPercentMemorized] = useState(ayahNumber);
-
-    const [isPlaying, setIsPlaying] = useState(false)
-    const [isLooping, setIsLooping] = useState(false)
-    const [isMuted, setIsMuted] = useState(false)
-    const [volume, setVolume] = useState(80)
-    const [currentTime, setCurrentTime] = useState(0)
-    const [duration, setDuration] = useState(0)
-    const [selectedReciter, setSelectedReciter] = useState(reciters[0].id)
-    const [showTranslation, setShowTranslation] = useState(false)
-    const audioRef = useRef<HTMLAudioElement>(null)
-    const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
-    const [audioUrl, setAudioUrl] = useState('');
-    const [playbackRate, setPlaybackRate] = useState(1);
-    const [canGoNext, setCanGoNext] = useState(false);
-
-
-  // Replace with real user ID
-  const userId = "user_123";
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isLooping, setIsLooping] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
+  const [volume, setVolume] = useState(80)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [selectedReciter, setSelectedReciter] = useState(reciters[0].id)
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const [audioUrl, setAudioUrl] = useState('');
+  const [playbackRate, setPlaybackRate] = useState(1);
 
   const syncToFirebase = async (memorized: Record<number, number[]>) => {
-    const user = getAuth().currentUser;
-    if (!user) return null;
-    try {
-      await setDoc(doc(db, "users", user.uid), { memorized }, { merge: true });
-    } catch (err) {
-      console.error("Error writing to Firebase:", err);
-    }
-  };
+  const user = getAuth().currentUser;
+
+  if (!user) {
+    console.warn("No user found — is auth not loaded?");
+    return null;
+  }
+
+  console.log("Syncing to Firestore for UID:", user.uid);
+
+  try {
+    await setDoc(doc(db, "memorizeTable", user.uid), { memorized }, { merge: true });
+    console.log("Successfully wrote to Firestore.");
+  } catch (err) {
+    console.error("Error writing to Firebase:", err);
+  }
+};
+
   
 
   const handleMarkAsMemorized = () => {
@@ -112,7 +114,7 @@ export default function MemorizePage() {
       const user = getAuth().currentUser;
     if (!user) return null;
       try {
-        const docSnap = await getDoc(doc(db, "users", user.uid));
+        const docSnap = await getDoc(doc(db, "memorizeTable", user.uid));
         if (docSnap.exists()) {
           const data = docSnap.data();
           if (data.memorized) {

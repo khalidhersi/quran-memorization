@@ -87,6 +87,11 @@ const handleEmailSignup = async (email: string, password: string) => {
       email: user.email,
       createdAt: new Date()
     });
+    
+    await setDoc(doc(db, "memorizeTable", user.uid), {
+      email: user.email,
+      createdAt: new Date()
+    });
 
     console.log("Signed up with email:", user.email);
   } catch (error: any) {
