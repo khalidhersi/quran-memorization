@@ -27,6 +27,7 @@ export function AppSidebar() {
     { title: "Memorize", icon: Book, href: "/memorize" },
     { title: "Test the Hafidh", icon: PencilRulerIcon, href: "/progress-demo" },
     { title: "Settings", icon: Sliders, href: "/settings/memorization" },
+    { title: "Sandbox", icon: Sliders, href: "/sandbox" },
   ]
 
   const handleNavClick = () => {
