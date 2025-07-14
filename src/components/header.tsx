@@ -9,7 +9,7 @@ type HeaderProps = {
 
 export default function Header({ title }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
+    <header className="sticky top-0 z-10 flex h-16 justify-between items-center gap-4 border-b bg-background px-6">
       <div className="flex items-center gap-4">
         <SidebarTrigger className="lg:hidden" />
         <h1 className="text-xl font-semibold">{title}</h1>
