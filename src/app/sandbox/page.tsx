@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Check, Pause, Play, Repeat, Rewind, TimerReset, Volume2, VolumeX } from "lucide-react"
+import { Check, Minus, Pause, Play, Repeat, Rewind, TimerReset, Volume2, VolumeX } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { LockedProgressCard } from "@/components/locked-progress-card"
@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Slider } from "@/components/ui/slider"
 import { getReciter } from "../../lib/quran-api";
+import { PrevProgressCard } from "@/components/prev-progress-card"
 
 type MemorizedMap = {
   [surah: number]: number[] // list of ayah numbers memorized in this surah
@@ -80,6 +81,29 @@ export default function ProgressDemoPage() {
       return updated;
     });
   };
+
+    const handleUnmarkAsMemorized = () => {
+      setIsMemorized(false);
+
+      setMemorized((prev) => {
+        const updated = { ...prev };
+
+        // Remove the ayah from the list
+        if (updated[surahNumber]) {
+          updated[surahNumber] = updated[surahNumber].filter((ayah) => ayah !== ayahNumber);
+
+          // If the list becomes empty, remove the surah key entirely (optional)
+          if (updated[surahNumber].length === 0) {
+            delete updated[surahNumber];
+          }
+
+          syncToFirebase(updated); // 🔥 Sync updated data to Firestore
+        }
+
+        return updated;
+      });
+    };
+
 
   useEffect(() => {
     const loadMemorizedFromFirebase = async () => {
@@ -161,6 +185,26 @@ export default function ProgressDemoPage() {
       setAyahNumber(1);
     } else {
       setAyahNumber(nextAyah);
+    }
+  };
+
+  const goToPreviousAyah = () => {
+    setIsMemorized(false);
+    setIsPlaying(false);
+    setCurrentTime(0);
+  
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  
+    if (ayahNumber === 1) {
+      const prevSurah = surahNumber === 1 ? 114 : surahNumber - 1;
+      const lastAyahInPrevSurah = ayahCounts.ayah_counts[prevSurah - 1];
+      setSurahNumber(prevSurah);
+      setAyahNumber(lastAyahInPrevSurah);
+    } else {
+      setAyahNumber(ayahNumber - 1);
     }
   };
 
@@ -577,7 +621,7 @@ const handleContinueFromSelection = () => {
             </div>
 
 
-            <div className="mt-6">
+            <div className="flex justify-between mt-6">
               <Button
                 onClick={handleMarkAsMemorized}
                 disabled={isMemorized}
@@ -587,7 +631,16 @@ const handleContinueFromSelection = () => {
                 <Check className="h-4 w-4" />
                 {isMemorized ? "Memorized" : "Mark as Memorized"}
               </Button>
+
+               {isMemorized && <Button
+                onClick={handleUnmarkAsMemorized}
+                className="flex items-center gap-2 bg-red-600 hover:bg-red-600/80 text-white-100"
+              >
+                <Minus className="h-4 w-4" />
+                {isMemorized ? "Unmark as Memorized" : "Unmark as Memorized"}
+              </Button>}
             </div>
+            
           </CardContent>
         </Card>
         
@@ -599,7 +652,11 @@ const handleContinueFromSelection = () => {
           tooltipMessage="Memorize this ayah to unlock the next one"
           onUnlockedClick={goToNextAyah}
         />
-
+<PrevProgressCard
+            title="Previous Ayah"
+            tooltipMessage="Memorize this ayah to unlock the next one"
+            onUnlockedClick={goToPreviousAyah} isLocked={false}        
+          />
       </div>
     </div>
   )
