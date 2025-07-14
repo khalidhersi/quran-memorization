@@ -432,7 +432,7 @@ const handleContinueFromSelection = () => {
         </div>
 
        {/* Progress Indicator */}
-        <div className="mt-8">
+    
          <div className="flex mt-1 ">
           <h3 className="mb-2s">Progress:    {Math.round(percentMemorized)}%</h3>
           </div>
@@ -451,7 +451,7 @@ const handleContinueFromSelection = () => {
           </div>
           <div className="mt-1 text-right text-xs text-gray-500">
           </div>
-        </div>
+       
 
         {/* Current Ayah Card */}
         <Card className="mb-6">
