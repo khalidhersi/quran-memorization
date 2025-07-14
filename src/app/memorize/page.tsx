@@ -27,6 +27,7 @@ import { getAuth } from "firebase/auth"; // Optional if user context is elsewher
 import { LockedProgressCard } from "@/components/locked-progress-card"
 import { PrevProgressCard } from "@/components/prev-progress-card"
 import { useAuth } from "../context/AuthContext"
+import Header from "@/components/header"
 
 type MemorizePage = {
   surahNumber: number;
@@ -423,10 +424,7 @@ const handleContinueFromSelection = () => {
 
   return (
     <div className="bg-background">
-      <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
-        <SidebarTrigger className="lg:hidden" />
-        <h1 className="text-xl font-semibold">Memorize Quran</h1>
-      </header>
+      <Header title={"Memorize Quran"} />
 
       <div className="mx-auto max-w-4xl p-4 lg:p-6">
 

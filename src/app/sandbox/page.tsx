@@ -17,6 +17,8 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { Slider } from "@/components/ui/slider"
 import { getReciter } from "../../lib/quran-api";
 import { PrevProgressCard } from "@/components/prev-progress-card"
+import SignOutButton from "@/components/SignOutButton"
+import Header from "@/components/header"
 
 type MemorizedMap = {
   [surah: number]: number[] // list of ayah numbers memorized in this surah
@@ -380,10 +382,7 @@ const handleContinueFromSelection = () => {
 
   return (
     <div className="bg-background min-h-screen w-full max-w-full overflow-x-hidden px-2 sm:px-4">
-      <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
-        <SidebarTrigger className="lg:hidden" />
-        <h1 className="text-xl font-semibold">Test the Hafidh</h1>
-      </header>
+      <Header title={"Memorize Ayah by Ayah"} />
 
       {showCongrats && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">

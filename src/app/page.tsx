@@ -13,6 +13,7 @@ import { db } from "@/firebase"; // adjust path to your firebase config
 import { getDocs, collection, where, query, doc, getDoc } from "firebase/firestore";
 import lastAyahsPerPage from "../../lastAyahsPerPage.json"
 import { useRouter } from 'next/navigation'; // ✅ for App Router
+import Header from "@/components/header"
 
  
 
@@ -159,13 +160,14 @@ const router = useRouter();
 
   return (
     <div className=" flex flex-col min-h-screen bg-background">
-      <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
+      {/* <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
         <SidebarTrigger className="lg:hidden" />
         <div className="flex flex-1 items-center justify-between">
           <h1 className="text-xl font-semibold">Dashboard</h1>
           <StreakIndicator streak={userData.streak} className="text-sm" />
         </div>
-      </header>
+      </header> */}
+      <Header title={"Dashboard"} />
 
       <main className="p-4 lg:p-6 flex-1 overflow-y-auto">
         <div className="grid gap-4 md:grid-cols-2">

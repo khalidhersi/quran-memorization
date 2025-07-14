@@ -11,6 +11,7 @@ import ayahCounts from '../../../ayah_counts.json';
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase"
 import { getAuth } from "firebase/auth"
+import Header from "@/components/header"
 
 type MemorizedMap = {
   [surah: number]: number[] // list of ayah numbers memorized in this surah
@@ -156,10 +157,7 @@ export default function ExamPage() {
 
   return (
     <div className="bg-background">
-      <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
-        <SidebarTrigger className="lg:hidden" />
-        <h1 className="text-xl font-semibold">Test the Hafidh</h1>
-      </header>
+      <Header title={"Test the Hafidh"} />
 
       {showCongrats && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">

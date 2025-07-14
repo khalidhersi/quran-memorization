@@ -23,6 +23,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { cn } from "@/lib/utils"
 import { useTheme } from "../../context/theme-context"
 import type { ThemeSettings } from "../../../app/context/theme-context"
+import Header from "@/components/header"
 
 // List of reciters
 const reciters = [
@@ -138,10 +139,7 @@ export default function MemorizationSettingsPage() {
 
   return (
     <div className="bg-background">
-      <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
-        <SidebarTrigger className="lg:hidden" />
-        <h1 className="text-xl font-semibold">Memorization Settings</h1>
-      </header>
+      <Header title={"Memorization Settings"} />
 
       <div className="mx-auto max-w-2xl p-4 lg:p-6">
         <div className="mb-4 space-y-1 lg:mb-6 lg:space-y-2">
