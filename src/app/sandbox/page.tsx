@@ -430,6 +430,29 @@ const handleContinueFromSelection = () => {
             </div>
           </div>
         </div>
+
+       {/* Progress Indicator */}
+        <div className="mt-8">
+         <div className="flex mt-1 ">
+          <h3 className="mb-2s">Progress:    {Math.round(percentMemorized)}%</h3>
+          </div>
+
+          <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-emerald-500 transition-all duration-300"
+              style={{
+                width: `${(ayahNumber / ayahCounts.ayah_counts[surahNumber - 1]) * 100}%`,
+              }}
+            />
+          </div>
+          <div className="flex justify-between mt-1 text-right text-xs text-gray-500">
+           <p> Memoried</p>
+           <p> {ayahNumber} of {ayahCounts.ayah_counts[surahNumber - 1]} ayahs memorized</p>
+          </div>
+          <div className="mt-1 text-right text-xs text-gray-500">
+          </div>
+        </div>
+
         {/* Current Ayah Card */}
         <Card className="mb-6">
           <CardContent className="p-6">
@@ -577,24 +600,6 @@ const handleContinueFromSelection = () => {
           onUnlockedClick={goToNextAyah}
         />
 
-        {/* Progress Indicator */}
-        <div className="mt-8">
-          <h3 className="mb-2 text-sm font-medium text-gray-500">Progress</h3>
-          { Math.round(percentMemorized)}%
-          <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-emerald-500 transition-all duration-300"
-              style={{
-                width: `${(ayahNumber / ayahCounts.ayah_counts[surahNumber - 1]) * 100}%`,
-              }}
-            />
-          </div>
-          <div className="mt-1 text-right text-xs text-gray-500">
-            {ayahNumber} of {ayahCounts.ayah_counts[surahNumber - 1]} ayahs memorized
-          </div>
-          <div className="mt-1 text-right text-xs text-gray-500">
-          </div>
-        </div>
       </div>
     </div>
   )
