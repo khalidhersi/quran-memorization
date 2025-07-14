@@ -379,7 +379,7 @@ const handleContinueFromSelection = () => {
   
 
   return (
-    <div className="bg-background">
+    <div className="bg-background min-h-screen w-full max-w-full overflow-x-hidden px-2 sm:px-4">
       <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
         <SidebarTrigger className="lg:hidden" />
         <h1 className="text-xl font-semibold">Test the Hafidh</h1>
@@ -409,13 +409,14 @@ const handleContinueFromSelection = () => {
 
 
 
-      <div className="mx-auto max-w-4xl p-4 lg:p-6">
+      <div className="mx-auto w-full max-w-4xl p-4 lg:p-6  overflow-x-hidden">
+
 
 
         {/* Reciter Selection */}
-        <div className="flex justify-center mb-4 lg:mb-3">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex gap-2 items-center justify-between">
+        <div className="flex flex-wrap  justify-center mb-4 sm:mb-3">
+          <div className="flex flex-wrap  flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap gap-2 items-center">
               <label className="flex items-center gap-2">
                 <span>Surah:</span>
                 <select
@@ -461,7 +462,7 @@ const handleContinueFromSelection = () => {
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Reciter:</span>
               <Select value={selectedReciter} onValueChange={setSelectedReciter}>
-                <SelectTrigger className="w-[180px] lg:w-[200px]">
+                <SelectTrigger className="w-full lg:max-w-[250px]">
                   <SelectValue placeholder="Select reciter" />
                 </SelectTrigger>
                 <SelectContent>
@@ -479,7 +480,7 @@ const handleContinueFromSelection = () => {
        {/* Progress Indicator */}
     
          <div className="flex mt-1 ">
-          <h3 className="mb-2s">Progress:    {Math.round(percentMemorized)}%</h3>
+          <h3 className="mb-2s">Progress: {Math.round(percentMemorized)}%</h3>
           </div>
 
           <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -524,7 +525,7 @@ const handleContinueFromSelection = () => {
         )}
 
             {/* Progress Bar */}
-            <div className="mb-2">
+            <div className="mb-2 w-full">
               <Slider
                 value={[currentTime]}
                 min={0}
@@ -540,8 +541,9 @@ const handleContinueFromSelection = () => {
             </div>
 
             {/* Controls */}
-            <div className="flex flex-wrap justify-center sm:justify-between items-center gap-2">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:justify-between items-stretch gap-3 w-full">
+              {/* Play, Rewind, Loop, Speed */}
+              <div className="flex flex-wrap justify-center gap-2 w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="icon"
@@ -588,20 +590,17 @@ const handleContinueFromSelection = () => {
                       <DropdownMenuItem
                         key={rate}
                         onClick={() => setPlaybackRate(rate)}
-                        className={cn(
-                          "cursor-pointer",
-                          playbackRate === rate && "font-bold text-emerald-600"
-                        )}
+                        className={cn("cursor-pointer", playbackRate === rate && "font-bold text-emerald-600")}
                       >
                         {rate}x
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* Mute + Volume */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -618,13 +617,14 @@ const handleContinueFromSelection = () => {
                   max={100}
                   step={1}
                   onValueChange={handleVolumeChange}
-                  className="w-24 sm:w-28 md:w-32"
+                  className="w-full sm:w-28 md:w-32 "
                 />
               </div>
             </div>
 
 
-            <div className="flex justify-between mt-6">
+
+            <div className="flex flex-col justify-between mt-6 sm:flex-row">
               <Button
                 onClick={handleMarkAsMemorized}
                 disabled={isMemorized}
@@ -635,10 +635,11 @@ const handleContinueFromSelection = () => {
                 {isMemorized ? "Memorized" : "Mark as Memorized"}
               </Button>
 
-               {isMemorized && <Button
+              {isMemorized && 
+               <Button
                 onClick={handleUnmarkAsMemorized}
                 className="flex items-center gap-2 text-sm sm:text-base bg-red-600 hover:bg-red-600/80 text-white-100"
-              >
+                >
                 <Minus className="h-4 w-4" />
                 {isMemorized ? "Unmark as Memorized" : "Unmark as Memorized"}
               </Button>}
