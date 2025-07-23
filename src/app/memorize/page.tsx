@@ -53,22 +53,21 @@ export default function MemorizePage() {
   const [playbackRate, setPlaybackRate] = useState(1);
 
   const syncToFirebase = async (memorized: Record<number, number[]>) => {
-  const user = getAuth().currentUser;
+    const user = getAuth().currentUser;
+    if (!user) {
+      console.warn("No user found — is auth not loaded?");
+      return null;
+    }
 
-  if (!user) {
-    console.warn("No user found — is auth not loaded?");
-    return null;
-  }
+    console.log("Syncing to Firestore for UID:", user.uid);
 
-  console.log("Syncing to Firestore for UID:", user.uid);
-
-  try {
-    await setDoc(doc(db, "memorizeTable", user.uid), { memorized }, { merge: true });
-    console.log("Successfully wrote to Firestore.");
-  } catch (err) {
-    console.error("Error writing to Firebase:", err);
-  }
-};
+    try {
+      await setDoc(doc(db, "memorizeTable", user.uid), { memorized }, { merge: true });
+      console.log("Successfully wrote to Firestore.");
+    } catch (err) {
+      console.error("Error writing to Firebase:", err);
+    }
+  };
 
   
 
@@ -407,12 +406,7 @@ const handleContinueFromSelection = () => {
       </div>
     )}
 
-
-
-
-      <div className="mx-auto w-full max-w-4xl p-4 lg:p-6  overflow-x-hidden">
-
-
+      <div className="mx-auto w-full max-w-4xl p-4 lg:p-6 overflow-x-hidden min-w-full">
 
         {/* Reciter Selection */}
         <div className="flex flex-wrap  justify-center mb-4 sm:mb-3">
@@ -507,7 +501,7 @@ const handleContinueFromSelection = () => {
               {ayahData ? `${ayahData.surah} ${ayahData.number}/${ayahCounts.ayah_counts[surahNumber - 1]}` : "Loading..."}
             </h2>
             <p
-              className="font-arabic leading-snug text-[clamp(1.25rem,4vw,2rem)] p-3 text-center"
+              className="font-arabic text-[clamp(1.25rem,4vw,2rem)] p-3 text-center w-full min-w-full break-words"
               dir="rtl"
               lang="ar"
             >
