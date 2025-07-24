@@ -117,7 +117,7 @@ const handleEmailLogin = async (email: string, password: string) => {
 
 
   return (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-white to-black px-4">
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-black to-black px-4">
     <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 space-y-6">
       <div className="text-center space-y-1">
         <h1 className="text-3xl md:text-4xl font-extrabold text-emerald-800">🌿 Quran Memory</h1>
