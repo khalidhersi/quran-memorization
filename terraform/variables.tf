@@ -1,16 +1,21 @@
 variable region {
   default = "eu-west-2"
 }
+
+variable name {
+  default = "quran-memorizing-web"
+}
+
 variable availability_zone {
   default = "eu-west-2a"
 }
 
 variable "instance_type" {
-  default = "t2.micto"
+  default = "t2.micro"
 }
 
 variable "app_port" {
-  default = 80
+  default = 3000
 }
 
 variable "ami" {

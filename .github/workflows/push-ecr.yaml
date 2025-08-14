@@ -1,0 +1,41 @@
+name: push-ecr
+on:
+  push:
+    branches: [ main ]
+
+# The same as teraform varibales used
+env:
+  AWS_REGION: eu-west-2
+  REPO_NAME: quran-memorizing-web
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Confgure AWS credentials from GitHub secrets
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # Logging in to ECR
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Build image
+      - name: Build Docker image
+        run: docker build -t ${{ env.REPO_NAME }}:latest .
+
+      # Tag & push to ECR
+      - name: Tag & Push
+        run: |
+          REGISTRY=${{ steps.login-ecr.outputs.registry }}
+          ECR="$REGISTRY/${{ env.REPO_NAME }}"
+          docker tag ${{ env.REPO_NAME }}:latest $ECR:latest
+          docker push $ECR:latest
